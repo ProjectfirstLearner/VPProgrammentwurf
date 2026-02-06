@@ -25,9 +25,17 @@
  * supplied main() routine is called.
  *
  * @param  None
- *
+ 
  * @retval : None
  */
+  Marker:
+ 	.word 0xABADD1E
+ 	/*ABADD1E in little Endian*/
+ 
+ EndMarker:
+ 	.word 0xABADA55
+ 	
+ 
 .section .text.Reset_Handler
 .type Reset_Handler, %function
 .global Reset_Handler
@@ -62,6 +70,27 @@ Reset_Handler:
 .loopFillZerobss:
     cmp r2, r4
     bcc .fillZerobss
+
+    /*  fill the stack segment. */
+    ldr r2, =_start_of_stack
+    ldr r4, =_end_of_stack
+    ldr r3, =Marker
+    ldr r3, [r3]
+    b .loopFillStack
+    
+
+.fillStack:
+    str  r3, [r2]
+    sub r2, r2, #4
+
+.loopFillStack:
+    cmp r2, r4
+    bne .fillStack
+	
+	ldr r3, =EndMarker
+	ldr r3, [r3]
+	str r3, [r2]
+	
 
     /* Initialize the Stack-Pointer */
     /* Load address of initial_stack_pointer into R0 for. Symbol defined in Linker Script */
