@@ -142,8 +142,8 @@ SECTIONS
   {
     . = ALIGN(4);
 
-     _end_of_stack = .;
-    . += _size_of_stack;
+    _initial_stack_pointer = .;
+    . -= _size_of_stack;
     
     . = ALIGN(4);
     
