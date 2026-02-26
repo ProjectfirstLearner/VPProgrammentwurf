@@ -6,3 +6,4 @@
 /Examples/Stack/*.bin
 /Examples/Stack/*.elf
 /Examples/Stack/*.o
+/.metadata/

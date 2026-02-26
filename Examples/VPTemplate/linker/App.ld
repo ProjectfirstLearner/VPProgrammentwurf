@@ -35,9 +35,9 @@ ENTRY(Reset_Handler)
 MEMORY
 {
   /* RAM Memory Region incl. SRAM1 and SRAM2 */
-  RAM    (rw)      : ORIGIN = 0x20000000,  LENGTH = 128K
-  /* FLASH Memory Region using mapped address 0x08000000. */
-  FLASH  (rx)      : ORIGIN = 0x08000000,  LENGTH = 512K
+  RAM    (rw)      : ORIGIN = 0x20004000,  LENGTH = 64K
+  /* FLASH Memory Region using mapped address 0x08010000. */
+  FLASH  (rx)      : ORIGIN = 0x08010000,  LENGTH = 128K
 }
 
 /***** GLOBAL SYMBOLS ********************************************************/
@@ -57,6 +57,10 @@ _initial_stack_pointer = _end_of_ram;               /* Set the symbol for initia
 /* Define output sections */
 SECTIONS
 {
+  /* Section for signature Bytes */
+
+
+
   /* Section for Interrupt Vector Table */
   .isr_vector :
   {
@@ -141,9 +145,10 @@ SECTIONS
   .stack (NOLOAD):
   {
     . = ALIGN(4);
-
-    _initial_stack_pointer = .;
-    . -= _size_of_stack;
+  
+    end_of_stack = .;
+    
+    . += _size_of_stack;
     
     . = ALIGN(4);
     
