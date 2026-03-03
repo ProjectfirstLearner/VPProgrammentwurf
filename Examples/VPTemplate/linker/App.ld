@@ -24,7 +24,7 @@
  * correct C-Environemt and call the main() function.
  *
  */
-ENTRY(Reset_Handler)
+ENTRY(StartApp_Handler)
 
 /*
  * Specifies the memory areas for the target system.

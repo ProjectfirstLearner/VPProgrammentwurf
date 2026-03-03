@@ -66,4 +66,15 @@ int32_t uartSendData(uint8_t* pDataBuffer, int32_t bufferLength);
  */
 int32_t uartReceiveData(uint8_t* pDataBuffer, int32_t bufferLength);
 
+/**
+ * @brief Checks for available data in the UART RX buffer
+ *
+ * @param pHasData	Pointer to store flag whether data is available.
+ * 					0 = no data available
+ * 					1 = data available
+ *
+ * 	@return Returns UART_ERR_OK if no error occured, otherwise UART_ERR_RECEIVE
+ */
+int32_t uartHasData(int8_t* pHasData);
+
 #endif

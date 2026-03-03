@@ -136,4 +136,20 @@ int32_t uartReceiveData(uint8_t* pDataBuffer, int32_t bufferLength)
     return result;
 }
 
+int32_t uartHasData(int8_t* pHasData)
+{
+	int32_t result = UART_ERR_OK;
+
+	if (__HAL_UART_GET_FLAG(&gUARTHandle, UART_FLAG_RXNE)==SET)
+	{
+		*pHasData = 1;
+	}
+	else
+	{
+		*pHasData = 0;
+	}
+
+	return result;
+}
+
 /***** PRIVATE FUNCTIONS *****************************************************/

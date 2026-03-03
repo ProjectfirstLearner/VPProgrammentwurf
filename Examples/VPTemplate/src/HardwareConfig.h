@@ -43,8 +43,8 @@
 #define LED3_PIN                               GPIO_PIN_9
 #define LED3_GPIO_PORT                         GPIOB
 
-#define LED4_PIN                               GPIO_PIN_15
-#define LED4_GPIO_PORT                         GPIOA
+#define LED4_PIN                               GPIO_PIN_8
+#define LED4_GPIO_PORT                         GPIOB
 
 /*
  * 7-Segment Pin Configuraiton

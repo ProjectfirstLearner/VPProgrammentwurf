@@ -91,20 +91,31 @@ OBJS_STM32LIB = $(addprefix $(OBJ_DIR)/, $(STM32LIB_FILENAMES_C:.c=.o))
 vpath %.c $(dir $(STM32LIB_SRC_C))
 
 ###############################################################################
-# Project specific Application/Auth Assembler source files
+# Project specific Auth Assembler source files
 ###############################################################################
-SRC_ASM += $(wildcard $(SRC_DIR)/*.s)
-SRC_ASM += $(wildcard $(SRC_DIR)/*.S)
-FILENAMES_ASM = $(notdir $(SRC_ASM))
-OBJFILENAMES_ASM = $(FILENAMES_ASM:.s=.o)
-OBJS_ASM = $(addprefix $(OBJ_DIR)/, $(OBJFILENAMES_ASM:.S=.o))
-vpath %.s $(dir $(SRC_ASM))
-vpath %.S $(dir $(SRC_ASM))
+SRC_ASM_AUTH += $(SRC_DIR)/vectors_auth.s
+SRC_ASM_AUTH += $(SRC_DIR)/startup_auth.s
+FILENAMES_ASM_AUTH = $(notdir $(SRC_ASM_AUTH))
+OBJFILENAMES_ASM_AUTH = $(FILENAMES_ASM_AUTH:.s=.o)
+OBJS_ASM_AUTH = $(addprefix $(OBJ_DIR)/, $(OBJFILENAMES_ASM_AUTH:.s=.o))
+vpath %.s $(dir $(SRC_ASM_AUTH))
+vpath %.S $(dir $(SRC_ASM_AUTH))
+
+###############################################################################
+# Project specific Application Assembler source files
+###############################################################################
+SRC_ASM_APP += $(SRC_DIR)/vectors_app.s
+SRC_ASM_APP += $(SRC_DIR)/startup_app.s
+FILENAMES_ASM_APP = $(notdir $(SRC_ASM_APP))
+OBJFILENAMES_ASM_APP = $(FILENAMES_ASM_APP:.s=.o)
+OBJS_ASM_APP = $(addprefix $(OBJ_DIR)/, $(OBJFILENAMES_ASM_APP:.s=.o))
+vpath %.s $(dir $(SRC_ASM_APP))
+vpath %.S $(dir $(SRC_ASM_APP))
 
 ###############################################################################
 # Project specific Application C-Source files
 ###############################################################################
-APP_SRC_C += $(SRC_DIR)/main.c
+APP_SRC_C += $(SRC_DIR)/main_app.c
 APP_SRC_C += $(SRC_DIR)/System.c
 APP_SRC_C += $(wildcard $(SRC_DIR)/App/*.c)
 APP_SRC_C += $(wildcard $(SRC_DIR)/HAL/*.c)
@@ -136,7 +147,7 @@ vpath %.c $(dir $(AUTH_SRC_C))
 
 DEPS := $(APP_OBJS_C:.o=.d)
 
-all: $(BLD_DIR) $(OBJ_DIR) $(BLD_DIR)/app.bin $(BLD_DIR)/auth.bin
+all: linkTouch $(BLD_DIR) $(OBJ_DIR) $(BLD_DIR)/app.bin $(BLD_DIR)/auth.bin
 
 ###############################################################################
 # Rules
@@ -165,11 +176,11 @@ $(OBJ_DIR)/libstm32.a: $(OBJS_STM32LIB)
 	@echo "  AR      $(notdir $@)"
 	@ar rcs $@ $(OBJS_STM32LIB)
 
-$(BLD_DIR)/app.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM) $(APP_OBJS_C) | $(APP_LD_FILE)
+$(BLD_DIR)/app.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_APP) $(APP_OBJS_C) | $(APP_LD_FILE)
 	@echo "  LD      $(notdir $@)"
 	@$(LD) $^ $(LDFLAGS) $(INC) -T$(APP_LD_FILE) -Wl,-Map $(BLD_DIR)/app.map -o $@
 
-$(BLD_DIR)/auth.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM) $(AUTH_OBJS_C) | $(AUTH_LD_FILE)
+$(BLD_DIR)/auth.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_AUTH) $(AUTH_OBJS_C) | $(AUTH_LD_FILE)
 	@echo "  LD      $(notdir $@)"
 	@$(LD) $^ $(LDFLAGS) $(INC) -T$(AUTH_LD_FILE) -Wl,-Map $(BLD_DIR)/auth.map -o $@
 
@@ -185,6 +196,10 @@ clean:
 	rm -f $(OBJ_DIR)/*.su
 	rm -f $(OBJ_DIR)/*.d
 
-.PHONY: all clean
+linkTouch:
+	touch $(SRC_DIR)/vectors_auth.s
+	touch $(SRC_DIR)/vectors_app.s
+
+.PHONY: linkTouch all clean
 
 -include $(DEPS)
