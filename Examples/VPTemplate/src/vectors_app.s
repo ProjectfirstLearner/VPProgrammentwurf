@@ -51,7 +51,7 @@ Default_Handler:
 .global g_pfnVectors
 g_pfnVectors:
     .word _initial_stack_pointer
-	.word Default_Handler
+	.word StartApp_Handler
 	.word NMI_Handler
 	.word HardFault_Handler
 	.word MemManage_Handler

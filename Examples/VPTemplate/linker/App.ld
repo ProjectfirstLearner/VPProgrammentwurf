@@ -35,7 +35,9 @@ ENTRY(StartApp_Handler)
 MEMORY
 {
   /* RAM Memory Region incl. SRAM1 and SRAM2 */
-  RAM    (rw)      : ORIGIN = 0x20004000,  LENGTH = 64K
+  RAM    (rw)      : ORIGIN = 0x20004000,  LENGTH = 60K
+  /* Stack Memory Region */
+  STACK  (rw)	   : ORIGIN = 0x20013000,  LENGTH = 4K
   /* FLASH Memory Region using mapped address 0x08010000. */
   FLASH  (rx)      : ORIGIN = 0x08010000,  LENGTH = 128K
 }
@@ -45,12 +47,12 @@ MEMORY
 /* Symbols used for memory management
  * This includes the stack and also a possible heap memory
  */
-_size_of_stack = 0x200;                             /* Size of stack in bytes */
-_size_of_heap  = 0x0;                               /* Size of heap in bytes */
+_size_of_stack = 0x1000;                            			/* Size of stack in bytes */
+_size_of_heap  = 0x0;                               			/* Size of heap in bytes */
 
 /* Highest usable address of the RAM. */
-_end_of_ram = ORIGIN(RAM) + LENGTH(RAM) - 4;        /* End of RAM */
-_initial_stack_pointer = _end_of_ram;               /* Set the symbol for initial stack pointer */
+_end_of_ram = ORIGIN(RAM) + LENGTH(RAM) - 4;					/* End of RAM */
+_initial_stack_pointer = ORIGIN(STACK) + LENGTH(STACK) - 4;     /* Start of STACK 0x20014000 */
 
 /***** SECTIONS **************************************************************/
 
@@ -143,19 +145,16 @@ SECTIONS
   } >RAM
   
   .stack (NOLOAD):
-  {
+  {    
+    . = ORIGIN(STACK);
     . = ALIGN(4);
-  
-    end_of_stack = .;
     
+    _end_of_stack = .;
     . += _size_of_stack;
     
-    . = ALIGN(4);
-    
     _start_of_stack = .;
-
-
-  } >RAM
+    
+  } >STACK
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
