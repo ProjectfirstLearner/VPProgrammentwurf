@@ -43,6 +43,12 @@
 
 /***** PRIVATE TYPES *********************************************************/
 
+typedef enum{
+	STATE_BOOTUP = 0, //giving identification 0, 1-3 will be added automatically to the other states
+	STATE_FAILURE,
+	STATE_PRE_APP,
+	STATE_START_APP
+}AuthState_t;
 
 /***** PRIVATE PROTOTYPES ****************************************************/
 static int32_t initializePeripherals();
@@ -51,6 +57,8 @@ static int32_t initializePeripherals();
 /***** PRIVATE VARIABLES *****************************************************/
 
 //static Scheduler gScheduler;            // Global Scheduler instance
+
+static AuthState_t gAuthState = STATE_BOOTUP; //global within scope
 
 
 /***** PUBLIC FUNCTIONS ******************************************************/
@@ -76,6 +84,24 @@ int main(void)
 
     while (1)
     {
+    	//implementing state machine using switch case
+    	switch (gAuthState){
+
+    		case STATE_BOOTUP:
+    			//all init functions
+    			break;
+    		case STATE_PRE_APP:
+    			//allpreStarting functions
+    			break;
+    		case STATE_START_APP:
+    			//all functions to start app
+    		case STATE_FAILURE:
+    			//functions to handle Failure
+    			break;
+    	}
+
+
+    	/*
         // Toggle all LEDs to the their functionality (Toggle frequency depends on HAL_Delay at end of loop)
         ledToggleLED(LED0);
         HAL_Delay(100);
@@ -98,6 +124,7 @@ int main(void)
         {
             displayShowDigit(RIGHT_DISPLAY, DIGIT_OFF);
         }
+        */
     }
 }
 
