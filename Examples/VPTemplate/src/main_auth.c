@@ -52,7 +52,7 @@ typedef enum{
 
 /***** PRIVATE PROTOTYPES ****************************************************/
 static int32_t initializePeripherals();
-
+static void HandleBootupState(void);
 
 /***** PRIVATE VARIABLES *****************************************************/
 
@@ -89,6 +89,7 @@ int main(void)
 
     		case STATE_BOOTUP:
     			//all init functions
+    			HandleBootupState();
     			break;
     		case STATE_PRE_APP:
     			//allpreStarting functions
@@ -129,7 +130,6 @@ int main(void)
 }
 
 /***** PRIVATE FUNCTIONS *****************************************************/
-
 /**
  * @brief Initializes the used peripherals like GPIO,
  * ADC, DMA and Timer Interrupts
@@ -154,3 +154,31 @@ static int32_t initializePeripherals()
 
     return ERROR_OK;
 }
+/**
+ * @brief Handles bootup of authenticator
+ */
+static void HandleBootupState(void) {
+
+	HAL_StatusTypeDef halStatus;
+	halStatus = HAL_Init();
+
+	// If HAL or Peripheral Initialization was not Successful: State -> FAILURE
+	if(halStatus != HAL_OK) {
+		gAuthState = STATE_FAILURE;
+		return;
+	}
+
+	// Set correct Clock Timing
+	SystemClock_Config();
+
+	if(initializePeripherals() != ERROR_OK) {
+			gAuthState = STATE_FAILURE;
+			return;
+		}
+
+	// Turning on LED D0 and Resetting D1 & D2
+	ledSetLED(LED0, GPIO_PIN_SET);
+	ledSetLED(LED1, GPIO_PIN_RESET);
+	ledSetLED(LED2, GPIO_PIN_RESET);
+}
+
