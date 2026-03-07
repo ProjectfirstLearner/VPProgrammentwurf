@@ -49,7 +49,8 @@ static int32_t initializePeripherals();
 
 
 /***** PRIVATE VARIABLES *****************************************************/
-static Scheduler gScheduler;            // Global Scheduler instance
+
+//static Scheduler gScheduler;            // Global Scheduler instance
 
 
 /***** PUBLIC FUNCTIONS ******************************************************/
@@ -60,6 +61,7 @@ static Scheduler gScheduler;            // Global Scheduler instance
  */
 int main(void)
 {
+	/*
     // Initialize the HAL
     HAL_Init();
 
@@ -70,6 +72,7 @@ int main(void)
 
     // Initialize Scheduler
     schedInitialize(&gScheduler);
+	*/
 
     while (1)
     {
