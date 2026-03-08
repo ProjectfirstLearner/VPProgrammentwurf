@@ -39,6 +39,12 @@
 
 
 /***** PRIVATE MACROS ********************************************************/
+#define UART_A_RX_FAILURE 15000U
+
+#define TIMER_START_VALUE 0
+#define EMPTY_UART 0
+#define INITIALIZE_FALSE 0
+#define INITIALIZE_TRUE 1
 
 
 /***** PRIVATE TYPES *********************************************************/
@@ -54,6 +60,8 @@ typedef enum{
 static int32_t initializePeripherals();
 static void HandleBootupState();
 static void HandlePreAppState();
+static void HandleAppStartState();
+static void HandleFailureState();
 
 /***** PRIVATE VARIABLES *****************************************************/
 
@@ -101,8 +109,11 @@ eAppTickStart = 0U;
     			break;
     		case STATE_START_APP:
     			//all functions to start app
+    			HandleAppStartState();
+    			break;
     		case STATE_FAILURE:
     			//functions to handle Failure
+    			HandleFailureState();
     			break;
     	}
 
@@ -192,13 +203,12 @@ static void HandleBootupState() {
 static void HandlePreAppState(){
 
 
-	uint8_t rxByte = 0U;
-	uint32_t timeElapsed = 0U;
+	uint32_t timeElapsed = TIMER_START_VALUE;
 
-	if (gPreAppInitialized = 0U){
+	if (gPreAppInitialized == INITIALIZE_FALSE){
 
 		gPreAppTickStart = HAL_GetTick();
-		gPreAppInitialized = 1U;
+		gPreAppInitialized = INITIALIZE_TRUE;
 
 		//D1 should stay on rest off until time elapsed
 		ledSetLED(LED0, GPIO_PIN_SET);
@@ -209,16 +219,37 @@ static void HandlePreAppState(){
 
 	//switching to failure if the 15s time is elapsed and no A input is given
 	timeElapsed = HAL_GetTick() - gPreAppTickStart;
-	if (timeElapsed >= 15000U)
+	if(timeElapsed >= UART_A_RX_FAILURE)
 	{
 	    gAuthState = STATE_FAILURE;
 	    return;
 	}
 
+	int8_t hasChar = EMPTY_UART;
+	    uartHasData(&hasChar);
 
+	    if (hasChar) {
+	        uint8_t ch = EMPTY_UART;
+	        uint32_t receiveOK = uartReceiveData(&ch, 1);
 
+	        // Checking for Input 'A' in Uart-Buffer
+	        if (receiveOK == UART_ERR_OK && ch == 'A') {
+	                gAuthState = STATE_START_APP;
+	                return;
+	        }
 
-
+	    }
 }
 
+static void HandleAppStartState(){
+	ledSetLED(LED0, GPIO_PIN_RESET);
+	ledSetLED(LED1, GPIO_PIN_RESET);
+	ledSetLED(LED2, GPIO_PIN_SET);
+}
 
+static void HandleFailureState() {
+
+	ledSetLED(LED0, GPIO_PIN_RESET);
+	ledSetLED(LED1, GPIO_PIN_RESET);
+	ledSetLED(LED4, GPIO_PIN_SET);
+}

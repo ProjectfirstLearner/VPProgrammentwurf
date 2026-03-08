@@ -89,7 +89,6 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
 
-
   /* Define a symbol for the load address of the initialized data
    * This address is located in FLASH
    */
@@ -109,6 +108,19 @@ SECTIONS
 
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
+
+  /* Section for Authenticator Code / Encryption */
+  .auth :
+  {
+  	. = ALIGN(4);
+  	_sauth = .;
+  	
+  	*(.auth)
+  	*(.auth*)
+  	
+  	. = ALIGN(4);
+  	_eauth = .;
+  } >FLASH
 
   /* Uninitialized data section */
   . = ALIGN(4);
