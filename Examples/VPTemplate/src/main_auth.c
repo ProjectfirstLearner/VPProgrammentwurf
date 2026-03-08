@@ -52,13 +52,17 @@ typedef enum{
 
 /***** PRIVATE PROTOTYPES ****************************************************/
 static int32_t initializePeripherals();
-static void HandleBootupState(void);
+static void HandleBootupState();
+static void HandlePreAppState();
 
 /***** PRIVATE VARIABLES *****************************************************/
 
 //static Scheduler gScheduler;            // Global Scheduler instance
 
 static AuthState_t gAuthState = STATE_BOOTUP; //global within scope
+
+static uint32_t gPreAppTickStart = 0U;
+static uint8_t gPreAppInitialized = 0U;
 
 
 /***** PUBLIC FUNCTIONS ******************************************************/
@@ -72,7 +76,7 @@ int main(void)
 	/*
     // Initialize the HAL
     HAL_Init();
-
+eAppTickStart = 0U;
     SystemClock_Config();
 
     // Initialize Peripherals
@@ -93,6 +97,7 @@ int main(void)
     			break;
     		case STATE_PRE_APP:
     			//allpreStarting functions
+    			HandlePreAppState();
     			break;
     		case STATE_START_APP:
     			//all functions to start app
@@ -143,25 +148,25 @@ static int32_t initializePeripherals()
 
     // Initialize GPIOs for LED and 7-Segment output
 	ledInitialize();
-    displayInitialize();
+    //displayInitialize();
 
     // Initialize GPIOs for Buttons
-    buttonInitialize();
+    //buttonInitialize();
 
     // Initialize Timer, DMA and ADC for sensor measurements
-    timerInitialize();
-    adcInitialize();
+    //timerInitialize();
+    //adcInitialize();
 
     return ERROR_OK;
 }
 /**
  * @brief Handles bootup of authenticator
  */
-static void HandleBootupState(void) {
+static void HandleBootupState() {
 
 	HAL_StatusTypeDef halStatus;
-	halStatus = HAL_Init();
 
+	halStatus = HAL_Init();
 	// If HAL or Peripheral Initialization was not Successful: State -> FAILURE
 	if(halStatus != HAL_OK) {
 		gAuthState = STATE_FAILURE;
@@ -180,5 +185,40 @@ static void HandleBootupState(void) {
 	ledSetLED(LED0, GPIO_PIN_SET);
 	ledSetLED(LED1, GPIO_PIN_RESET);
 	ledSetLED(LED2, GPIO_PIN_RESET);
+
+	gAuthState = STATE_PRE_APP;
 }
+
+static void HandlePreAppState(){
+
+
+	uint8_t rxByte = 0U;
+	uint32_t timeElapsed = 0U;
+
+	if (gPreAppInitialized = 0U){
+
+		gPreAppTickStart = HAL_GetTick();
+		gPreAppInitialized = 1U;
+
+		//D1 should stay on rest off until time elapsed
+		ledSetLED(LED0, GPIO_PIN_SET);
+		ledSetLED(LED1, GPIO_PIN_RESET);
+		ledSetLED(LED2, GPIO_PIN_RESET);
+
+	}
+
+	//switching to failure if the 15s time is elapsed and no A input is given
+	timeElapsed = HAL_GetTick() - gPreAppTickStart;
+	if (timeElapsed >= 15000U)
+	{
+	    gAuthState = STATE_FAILURE;
+	    return;
+	}
+
+
+
+
+
+}
+
 
