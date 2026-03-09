@@ -53,20 +53,15 @@ typedef struct _Scheduler
 {
     GetHALTick pGetHALTick;             //!< Function pointer for callback to read current HAL tick counter
 
-    uint32_t halTick_1ms;               //!< Timestamp for last execution of 1ms task
-    CyclicFunction pTask_1ms;           //!< Function pointer to 1ms cyclic task function
-
     uint32_t halTick_10ms;              //!< Timestamp for last execution of 10ms task
     CyclicFunction pTask_10ms;          //!< Function pointer to 10ms cyclic task function
 
-    uint32_t halTick_100ms;             //!< Timestamp for last execution of 100ms task
-    CyclicFunction pTask_100ms;         //!< Function pointer to 100ms cyclic task function
+    uint32_t halTick_50ms;             //!< Timestamp for last execution of 50ms task
+    CyclicFunction pTask_50ms;         //!< Function pointer to 50ms cyclic task function
 
     uint32_t halTick_250ms;             //!< Timestamp for last execution of 250ms task
     CyclicFunction pTask_250ms;         //!< Function pointer to 250ms cyclic task function
 
-    uint32_t halTick_1000ms;            //!< Timestamp for last execution of 1000ms task
-    CyclicFunction pTask_1000ms;        //!< Function pointer to 1000ms cyclic task function
 } Scheduler;
 
 
