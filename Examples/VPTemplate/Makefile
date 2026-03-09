@@ -22,7 +22,6 @@ AS		= arm-none-eabi-as
 LD		= arm-none-eabi-gcc
 OBJCOPY = arm-none-eabi-objcopy
 SIZE    = arm-none-eabi-size
-PYTHON	= python3
 
 
 ###############################################################################
@@ -30,14 +29,10 @@ PYTHON	= python3
 ###############################################################################
 
 # Directory Layout
-SRC_DIR	  	= src
-OBJ_DIR   	= obj
-LIB_DIR	  	= lib
-BLD_DIR   	= build
-SCRIPT_DIR	= ../../Scripts
-AUTH_SECTION_RAW	= $(BLD_DIR)/auth_section.bin
-AUTH_SECTION_ENC	= $(BLD_DIR)/auth_section_encrypted.bin
-
+SRC_DIR	  = src
+OBJ_DIR   = obj
+LIB_DIR	  = lib
+BLD_DIR   = build
 
 # Locate the main libraries
 HAL = $(LIB_DIR)/HAL
@@ -188,12 +183,6 @@ $(BLD_DIR)/app.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_APP) $(APP_OBJS_C) | $(APP_
 $(BLD_DIR)/auth.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_AUTH) $(AUTH_OBJS_C) | $(AUTH_LD_FILE)
 	@echo "  LD      $(notdir $@)"
 	@$(LD) $^ $(LDFLAGS) $(INC) -T$(AUTH_LD_FILE) -Wl,-Map $(BLD_DIR)/auth.map -o $@
-	@echo "  OBJCOPY dump .auth"
-	@$(OBJCOPY) --dump-section .auth=$(AUTH_SECTION_RAW) $@
-	@echo "  PYTHON encrypt .auth"
-	@$(PYTHON) $(SCRIPT_DIR)/encrypt_file.py -o $(AUTH_SECTION_ENC) $(AUTH_SECTION_RAW)
-	@echo "  OBJCOPY update .auth"
-	@$(OBJCOPY) --update-section .auth=$(AUTH_SECTION_ENC) $@
 
 $(BLD_DIR)/%.bin: $(BLD_DIR)/%.elf
 	@echo "  OBJCOPY $(notdir $@)"
@@ -202,8 +191,6 @@ $(BLD_DIR)/%.bin: $(BLD_DIR)/%.elf
 clean:
 	rm -f $(BLD_DIR)/*.elf
 	rm -f $(BLD_DIR)/*.bin
-	rm -f $(BLD_DIR)/auth_section.bin
-	rm -f $(BLD_DIR)/auth_section_encrypted.bin
 	rm -f $(OBJ_DIR)/*.o
 	rm -f $(OBJ_DIR)/*.a
 	rm -f $(OBJ_DIR)/*.su

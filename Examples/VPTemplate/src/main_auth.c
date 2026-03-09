@@ -25,36 +25,35 @@
 #include "Util/Log/LogOutput.h"
 
 #include "UARTModule.h"
-#include "ButtonModule.h"
 #include "LEDModule.h"
 #include "DisplayModule.h"
-#include "ADCModule.h"
-#include "TimerModule.h"
-#include "Scheduler.h"
-
-#include "GlobalObjects.h"
 
 
 /***** PRIVATE CONSTANTS *****************************************************/
 
 
 /***** PRIVATE MACROS ********************************************************/
-#define UART_A_RX_FAILURE 15000U
+#define UART_A_RX_FAILURE 15000
 
 #define TIMER_START_VALUE 0
-#define EMPTY_UART 0
-#define INITIALIZE_FALSE 0
-#define INITIALIZE_TRUE 1
+#define EMPTY_UART_VALUE 0
+
+#define INITIALIZE_ZERO 0
+#define INITIALIZE_ONE 1
+
+#define UART_RX_ONE_BYTE 1
+#define UART_TRIGGER_CHAR 'A'
 
 
 /***** PRIVATE TYPES *********************************************************/
 
-typedef enum{
+typedef enum
+{
 	STATE_BOOTUP = 0, //giving identification 0, 1-3 will be added automatically to the other states
 	STATE_FAILURE,
 	STATE_PRE_APP,
 	STATE_START_APP
-}AuthState_t;
+} AuthState_t;
 
 /***** PRIVATE PROTOTYPES ****************************************************/
 static int32_t initializePeripherals();
@@ -65,35 +64,17 @@ static void HandleFailureState();
 
 /***** PRIVATE VARIABLES *****************************************************/
 
-//static Scheduler gScheduler;            // Global Scheduler instance
-
 static AuthState_t gAuthState = STATE_BOOTUP; //global within scope
 
-static uint32_t gPreAppTickStart = 0U;
-static uint8_t gPreAppInitialized = 0U;
-
+static uint32_t gPreAppTickStart = TIMER_START_VALUE;
+static uint8_t gPreAppInitialized = INITIALIZE_ZERO;
 
 /***** PUBLIC FUNCTIONS ******************************************************/
-
-
 /**
- * @brief Main function of System
+ * @brief Main function of Authenticator
  */
 int main(void)
 {
-	/*
-    // Initialize the HAL
-    HAL_Init();
-eAppTickStart = 0U;
-    SystemClock_Config();
-
-    // Initialize Peripherals
-    initializePeripherals();
-
-    // Initialize Scheduler
-    schedInitialize(&gScheduler);
-	*/
-
     while (1)
     {
     	//implementing state machine using switch case
@@ -116,32 +97,6 @@ eAppTickStart = 0U;
     			HandleFailureState();
     			break;
     	}
-
-
-    	/*
-        // Toggle all LEDs to the their functionality (Toggle frequency depends on HAL_Delay at end of loop)
-        ledToggleLED(LED0);
-        HAL_Delay(100);
-        ledToggleLED(LED1);
-        HAL_Delay(100);
-        ledToggleLED(LED2);
-        HAL_Delay(100);
-        ledToggleLED(LED3);
-        HAL_Delay(100);
-        ledToggleLED(LED4);
-        HAL_Delay(100);
-
-        uint8_t buf[10];
-        uartReceiveData(buf, 2);
-        if (buf[0] == 'X' && buf[1] == '\r')
-        {
-            displayShowDigit(RIGHT_DISPLAY, DIGIT_DASH);
-        }
-        else
-        {
-            displayShowDigit(RIGHT_DISPLAY, DIGIT_OFF);
-        }
-        */
     }
 }
 
@@ -159,26 +114,19 @@ static int32_t initializePeripherals()
 
     // Initialize GPIOs for LED and 7-Segment output
 	ledInitialize();
-    //displayInitialize();
-
-    // Initialize GPIOs for Buttons
-    //buttonInitialize();
-
-    // Initialize Timer, DMA and ADC for sensor measurements
-    //timerInitialize();
-    //adcInitialize();
 
     return ERROR_OK;
 }
+
 /**
- * @brief Handles bootup of authenticator
+ * @brief Handles Bootup of authenticator
  */
 static void HandleBootupState() {
 
 	HAL_StatusTypeDef halStatus;
 
 	halStatus = HAL_Init();
-	// If HAL or Peripheral Initialization was not Successful: State -> FAILURE
+	// If HAL initialization was not Successful: State -> FAILURE
 	if(halStatus != HAL_OK) {
 		gAuthState = STATE_FAILURE;
 		return;
@@ -187,10 +135,11 @@ static void HandleBootupState() {
 	// Set correct Clock Timing
 	SystemClock_Config();
 
+	// If Peripheral initialization was not Successful: State -> FAILURE
 	if(initializePeripherals() != ERROR_OK) {
-			gAuthState = STATE_FAILURE;
-			return;
-		}
+		gAuthState = STATE_FAILURE;
+		return;
+	}
 
 	// Turning on LED D0 and Resetting D1 & D2
 	ledSetLED(LED0, GPIO_PIN_SET);
@@ -200,24 +149,22 @@ static void HandleBootupState() {
 	gAuthState = STATE_PRE_APP;
 }
 
+/**
+ * @brief Handles Pre-Application of authenticator
+ */
 static void HandlePreAppState(){
 
-
+	// Set the Timer for Timeout to 0
 	uint32_t timeElapsed = TIMER_START_VALUE;
 
-	if (gPreAppInitialized == INITIALIZE_FALSE){
+	// Initialize Tick for Timer only once
+	if (gPreAppInitialized == INITIALIZE_ZERO){
 
 		gPreAppTickStart = HAL_GetTick();
-		gPreAppInitialized = INITIALIZE_TRUE;
-
-		//D1 should stay on rest off until time elapsed
-		ledSetLED(LED0, GPIO_PIN_SET);
-		ledSetLED(LED1, GPIO_PIN_RESET);
-		ledSetLED(LED2, GPIO_PIN_RESET);
-
+		gPreAppInitialized = INITIALIZE_ONE;
 	}
 
-	//switching to failure if the 15s time is elapsed and no A input is given
+	// Switching to Failure-State if the 15s timeout is reached
 	timeElapsed = HAL_GetTick() - gPreAppTickStart;
 	if(timeElapsed >= UART_A_RX_FAILURE)
 	{
@@ -225,31 +172,39 @@ static void HandlePreAppState(){
 	    return;
 	}
 
-	int8_t hasChar = EMPTY_UART;
-	    uartHasData(&hasChar);
+	// Reading UART Input
+	int8_t hasChar = EMPTY_UART_VALUE;
+	uartHasData(&hasChar);
 
-	    if (hasChar) {
-	        uint8_t ch = EMPTY_UART;
-	        uint32_t receiveOK = uartReceiveData(&ch, 1);
+    if (hasChar != EMPTY_UART_VALUE)
+    {
+        uint8_t ch = EMPTY_UART_VALUE;
+        uint32_t receiveStatus = uartReceiveData(&ch, UART_RX_ONE_BYTE);
 
-	        // Checking for Input 'A' in Uart-Buffer
-	        if (receiveOK == UART_ERR_OK && ch == 'A') {
-	                gAuthState = STATE_START_APP;
-	                return;
-	        }
-
-	    }
+        if ((receiveStatus == UART_ERR_OK) && (ch == UART_TRIGGER_CHAR))
+        {
+            gAuthState = STATE_START_APP;
+            return;
+        }
+    }
 }
 
+/**
+ * @brief Handles Application Start of authenticator
+ */
 static void HandleAppStartState(){
-	ledSetLED(LED0, GPIO_PIN_RESET);
-	ledSetLED(LED1, GPIO_PIN_RESET);
+	//ledSetLED(LED0, GPIO_PIN_SET);
+	//ledSetLED(LED1, GPIO_PIN_RESET);
 	ledSetLED(LED2, GPIO_PIN_SET);
 }
 
+/**
+ * @brief Handles Failure of authenticator
+ */
 static void HandleFailureState() {
 
 	ledSetLED(LED0, GPIO_PIN_RESET);
 	ledSetLED(LED1, GPIO_PIN_RESET);
+	ledSetLED(LED2, GPIO_PIN_RESET);
 	ledSetLED(LED4, GPIO_PIN_SET);
 }
