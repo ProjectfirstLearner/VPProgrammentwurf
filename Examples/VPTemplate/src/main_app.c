@@ -33,6 +33,7 @@
 #include "Scheduler.h"
 
 #include "GlobalObjects.h"
+#include "AppTasks.h"//including tasks
 
 
 /***** PRIVATE CONSTANTS *****************************************************/
@@ -72,11 +73,32 @@ int main(void)
     // Initialize Scheduler
     schedInitialize(&gScheduler);
 
+
+
+    //giving the scheduler the actual time
+    gScheduler.pGetHALTick = HAL_GetTick;
+
+    //setting the time intervals
+    gScheduler.pTask_10ms = taskApp10ms;
+    gScheduler.pTask_50ms = taskApp50ms;
+    gScheduler.pTask_250ms = taskApp250ms;
+
+
+
+    while(1){
+    	schedCycle(&gScheduler);//calling scheduler
+    }
+
+
     int globalCounter = 0;
     uint8_t left = 0;
 
+    //test Programm
+    /*
     while (1)
     {
+
+
         // Read to buttons
         Button_Status_t but1 = buttonGetButtonStatus(BTN_SW1);
         Button_Status_t but2 = buttonGetButtonStatus(BTN_SW2);
@@ -136,6 +158,7 @@ int main(void)
         // Remove this HAL_Delay as soon as there is a Scheduler used
         HAL_Delay(25);
     }
+    */
 }
 
 /***** PRIVATE FUNCTIONS *****************************************************/

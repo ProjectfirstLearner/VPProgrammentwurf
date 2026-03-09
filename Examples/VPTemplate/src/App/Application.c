@@ -1,5 +1,5 @@
 /******************************************************************************
- * @file Application.h
+ * @file Application.c
  *
  * @author Andreas Schmidt (a.v.schmidt81@googlemail.com)
  * @date   03.01.2026
@@ -17,93 +17,136 @@
 /***** INCLUDES **************************************************************/
 #include <string.h>
 
-#include "Application.h"
-#include "Util/Global.h"
+#include "Application.h"//app implementation
+#include "Util/Global.h"//error codes
 #include "Util/Log/printf.h"
 
 #include "UARTModule.h"
 #include "ButtonModule.h"
 #include "LEDModule.h"
 
-#include "Util/StateTable/StateTable.h"
-
-
-/***** PRIVATE CONSTANTS *****************************************************/
-
-
-/***** PRIVATE MACROS ********************************************************/
-
-
-/***** PRIVATE TYPES *********************************************************/
+#include "Util/StateTable/StateTable.h" //state table
 
 
 /***** PRIVATE PROTOTYPES ****************************************************/
-static int32_t onStateRunning(State_t* pState, int32_t eventID);
+
+//defining functions that should be executing when in according state
+static int32_t onStateInitialization(State_t* pState, int32_t eventID);
+static int32_t onStatePreOperational(State_t* pState, int32_t eventID);
+static int32_t onStateOperational(State_t* pState, int32_t eventID);
+static int32_t onStateEmergency(State_t* pState, int32_t eventID);
+static int32_t onStateTestMode(State_t* pState, int32_t eventID);
+static int32_t onStateFailure(State_t* pState, int32_t eventID);
 
 /***** PRIVATE VARIABLES *****************************************************/
 
-/**
- * @brief List of State for the State Machine
- *
- * This list only constructs the state objects for each possible state
- * in the state machine. There are no transistions or events defined
- *
- */
+//asigning the functions to states
 static State_t gStateList[] =
 {
-    {STATE_ID_STARTUP, 0,  		0,                  0,              false},
-    {STATE_ID_RUNNING, 0,       onStateRunning,     0,  			false},
-    {STATE_ID_FAILURE, 0,  		0,                  0,              false}
+    {STATE_ID_INITIALIZATION,  NULL, onStateInitialization, NULL, false},
+    {STATE_ID_PRE_OPERATIONAL, NULL, onStatePreOperational, NULL, false},
+    {STATE_ID_OPERATIONAL,     NULL, onStateOperational,    NULL, false},
+    {STATE_ID_EMERGENCY,       NULL, onStateEmergency,      NULL, false},
+    {STATE_ID_TEST_MODE,       NULL, onStateTestMode,       NULL, false},
+    {STATE_ID_FAILURE,         NULL, onStateFailure,        NULL, false}
 };
 
-/**
- * @brief Definition of the transistion table of the state machine. Each row
- * contains FROM_STATE_ID, TO_STATE_ID, EVENT_ID, Function Pointer Guard Function
- *
- * The last two members of a transistion row are only the initialization of dynamic
- * members used durin runtim
- */
+//State table, defining from which state can be switched to which
 static StateTableEntry_t gStateTableEntries[] =
 {
-    {STATE_ID_STARTUP,          STATE_ID_RUNNING,           EVT_ID_INIT_READY,          0,      0,      0},
-    {STATE_ID_STARTUP,          STATE_ID_FAILURE,           EVT_ID_SENSOR_FAILED,       0,      0,      0},
-    {STATE_ID_RUNNING,          STATE_ID_FAILURE,           EVT_ID_SENSOR_FAILED,       0,      0,      0},
+    {STATE_ID_INITIALIZATION,  STATE_ID_PRE_OPERATIONAL, EVT_ID_INIT_READY,                NULL, NULL, NULL},
+    {STATE_ID_INITIALIZATION,  STATE_ID_FAILURE,         EVT_ID_SENSOR_FAILED,             NULL, NULL, NULL},
+    {STATE_ID_INITIALIZATION,  STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL},
+
+    {STATE_ID_PRE_OPERATIONAL, STATE_ID_OPERATIONAL,     EVT_ID_SWITCH_TO_OPERATIONAL,     NULL, NULL, NULL},
+    {STATE_ID_PRE_OPERATIONAL, STATE_ID_TEST_MODE,       EVT_ID_TEST_MODE_TRIGGERED,       NULL, NULL, NULL},
+    {STATE_ID_PRE_OPERATIONAL, STATE_ID_FAILURE,         EVT_ID_SENSOR_FAILED,             NULL, NULL, NULL},
+    {STATE_ID_PRE_OPERATIONAL, STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL},
+
+    {STATE_ID_OPERATIONAL,     STATE_ID_PRE_OPERATIONAL, EVT_ID_SWITCH_TO_PRE_OPERATIONAL, NULL, NULL, NULL},
+    {STATE_ID_OPERATIONAL,     STATE_ID_EMERGENCY,       EVT_ID_EMERGENCY_TRIGGERED,       NULL, NULL, NULL},
+    {STATE_ID_OPERATIONAL,     STATE_ID_TEST_MODE,       EVT_ID_TEST_MODE_TRIGGERED,       NULL, NULL, NULL},
+    {STATE_ID_OPERATIONAL,     STATE_ID_FAILURE,         EVT_ID_SENSOR_FAILED,             NULL, NULL, NULL},
+    {STATE_ID_OPERATIONAL,     STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL},
+
+    {STATE_ID_EMERGENCY,       STATE_ID_OPERATIONAL,     EVT_ID_ALARM_RESET,               NULL, NULL, NULL},
+    {STATE_ID_EMERGENCY,       STATE_ID_FAILURE,         EVT_ID_SENSOR_FAILED,             NULL, NULL, NULL},
+    {STATE_ID_EMERGENCY,       STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL},
+
+    {STATE_ID_TEST_MODE,       STATE_ID_FAILURE,         EVT_ID_SENSOR_FAILED,             NULL, NULL, NULL},
+    {STATE_ID_TEST_MODE,       STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL}
 };
 
-/**
- * @brief Global State Table instance
- *
- */
+//global state table instance
 static StateTable_t gStateTable;
 
 
 /***** PUBLIC FUNCTIONS ******************************************************/
 
-int32_t sampleAppInitialize()
-{
-    gStateTable.pStateList = gStateList;
-    gStateTable.stateCount = sizeof(gStateList) / sizeof(State_t);
-    int32_t result = stateTableInitialize(&gStateTable, gStateTableEntries, sizeof(gStateTableEntries) / sizeof(StateTableEntry_t), STATE_ID_STARTUP);
+//function on initializacion
 
-    return result;
+int32_t applicationInitialize(void)
+{
+    gStateTable.pStateList = gStateList;														//adding states to global instance
+    gStateTable.stateCount = sizeof(gStateList) / sizeof(gStateList[0]);						//
+
+    return stateTableInitialize(&gStateTable,													/*calculating state count so that
+     	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	the framework can work safely */
+                                gStateTableEntries,
+                                sizeof(gStateTableEntries) / sizeof(gStateTableEntries[0]),		//using size of arrays so that when adding the calc still works
+																								//exmpl. when checking for valid state switch, iterating till statecount works
+                                STATE_ID_INITIALIZATION);										//starting state
 }
 
-int32_t sampleAppRun()
+int32_t applicationRun(void)
 {
-    int32_t result = stateTableRunCyclic(&gStateTable);
-    return result;
+    return stateTableRunCyclic(&gStateTable);	//function to be calling the state table (every 50ms)
 }
 
-int32_t sameplAppSendEvent(int32_t eventID)
+int32_t applicationSendEvent(int32_t eventID)
 {
-    int32_t result = stateTableSendEvent(&gStateTable, eventID);
-    return result;
+    return stateTableSendEvent(&gStateTable, eventID);		//function to sending event
 }
-
 
 /***** PRIVATE FUNCTIONS *****************************************************/
-static int32_t onStateRunning(State_t* pState, int32_t eventID)
+static int32_t onStateInitialization(State_t* pState, int32_t eventID) //pointer to State so can be read or written
 {
-	return 0;
+    (void)pState; 	//Platzhalter um unused zu vermeiden
+    (void)eventID;	//Platzhalter um unused zu vermeiden
+    return ERROR_OK; //rückgabewert ok, um nichts auszulösen
 }
 
+static int32_t onStatePreOperational(State_t* pState, int32_t eventID)
+{
+    (void)pState;
+    (void)eventID;
+    return ERROR_OK;
+}
+
+static int32_t onStateOperational(State_t* pState, int32_t eventID)
+{
+    (void)pState;
+    (void)eventID;
+    return ERROR_OK;
+}
+
+static int32_t onStateEmergency(State_t* pState, int32_t eventID)
+{
+    (void)pState;
+    (void)eventID;
+    return ERROR_OK;
+}
+
+static int32_t onStateTestMode(State_t* pState, int32_t eventID)
+{
+    (void)pState;
+    (void)eventID;
+    return ERROR_OK;
+}
+
+static int32_t onStateFailure(State_t* pState, int32_t eventID)
+{
+    (void)pState;
+    (void)eventID;
+    return ERROR_OK;
+}

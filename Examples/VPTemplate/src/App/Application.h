@@ -22,22 +22,41 @@
 
 
 /***** MACROS ****************************************************************/
-#define STATE_ID_STARTUP        1       //!< Example State for Startup
-#define STATE_ID_RUNNING        2       //!< Example State for Runing
-#define STATE_ID_FAILURE        3       //!< Example State for Failure
 
-#define EVT_ID_INIT_READY       1       //!< Event ID for INIT_READY
-#define EVT_ID_SENSOR_FAILED    2       //!< Event ID for Sensor Failure
 
 /***** TYPES *****************************************************************/
+typedef enum
+{
+    STATE_ID_INITIALIZATION = 0,
+    STATE_ID_PRE_OPERATIONAL,
+    STATE_ID_OPERATIONAL,
+    STATE_ID_EMERGENCY,
+    STATE_ID_TEST_MODE,
+    STATE_ID_FAILURE
+} ApplicationStateID_t;
 
+typedef enum
+{
+    EVT_ID_INIT_READY = 1,				/*starting at 1, becasue 0 is defined as "STT_NONE_EVENT",
+    										dodging a mislead event if stateTableSendEvent() sends 0*/
+    EVT_ID_SENSOR_FAILED,
+    EVT_ID_SWITCH_TO_OPERATIONAL,
+    EVT_ID_SWITCH_TO_PRE_OPERATIONAL,
+    EVT_ID_EMERGENCY_TRIGGERED,
+    EVT_ID_ALARM_RESET,
+    EVT_ID_TEST_MODE_TRIGGERED,
+    EVT_ID_STACK_CORRUPTION
+} ApplicationEventID_t;
 
 /***** PROTOTYPES ************************************************************/
 
-int32_t sampleAppInitialize();
+//function to asign state list, transition table, and start state
+int32_t applicationInitialize(void);
 
-int32_t sampleAppRun();
+//gets called every 50ms
+int32_t applicationRun(void);
 
-int32_t sameplAppSendEvent(int32_t eventID);
+//function used to send events to state machine
+int32_t applicationSendEvent(int32_t eventID);
 
 #endif
