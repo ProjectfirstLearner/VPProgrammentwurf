@@ -60,7 +60,17 @@ _initial_stack_pointer = ORIGIN(STACK) + LENGTH(STACK) - 4;     /* Start of STAC
 SECTIONS
 {
   /* Section for signature Bytes */
-
+  .signature :
+  {
+  	. = ALIGN(4);
+  	_ssignature = .;
+  	
+  	KEEP(*(.signature))
+  	KEEP(*(.signature*))
+  	
+  	. = ALIGN(4);
+  	_esignature = .;
+  } >FLASH
 
 
   /* Section for Interrupt Vector Table */

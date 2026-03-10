@@ -51,10 +51,17 @@
 #define KEY_COMPLETE_FLAG				1u
 #define KEY_OVERFLOW_FLAG				1u
 
+// Key Flags
+#define KEY_LENGTH_MIN_VALUE			0u
+#define KEY_LENGTH_MAX_VALUE			8u
+
 // LED CONTROL
 
 #define LED_FLASH_PERIOD_MS				250u
 #define LED_FLASH_DIVIDER				2u
+
+// RAM
+#define APPLICATION_FLASH_ADDRESS		0x08010000u
 
 /***** PRIVATE TYPES *********************************************************/
 
@@ -88,6 +95,9 @@ typedef struct
 	uint8_t initialized;
 } KeyRxContext_t;
 
+typedef void (*AuthFunction_t)();
+typedef void (*ApplicationFunction_t)();
+
 /***** PRIVATE PROTOTYPES ****************************************************/
 
 static int32_t initializePeripherals();
@@ -119,6 +129,10 @@ static void KeyRxProcess(KeyRxContext_t* pContext);
 static uint32_t KeyRxGetElapsedTimeMs(const KeyRxContext_t* pContext);
 static void UpdateKeyTimeoutIndication(uint32_t elapsedTimeMs);
 
+// Verify Functions
+static int32_t ExecuteVerifyFromRam();
+static void StartApplication();
+
 /***** PRIVATE VARIABLES *****************************************************/
 
 static AuthState_t gAuthState = STATE_BOOTUP;
@@ -134,7 +148,6 @@ extern uint8_t _sauth_flash[];
 extern uint8_t _eauth_flash[];
 extern uint8_t _sauth_ram[];
 extern uint8_t _eauth_ram[];
-extern uint8_t _auth_size;
 
 /***** PUBLIC FUNCTIONS ******************************************************/
 /**
@@ -260,9 +273,15 @@ static void HandlePreAppState()
  */
 static void HandleAppStartState()
 {
-	//ledSetLED(LED0, GPIO_PIN_SET);
-	//ledSetLED(LED1, GPIO_PIN_RESET);
 	ledSetLED(LED2, GPIO_PIN_SET);
+
+	if(ExecuteVerifyFromRam() != ERROR_OK)
+	{
+		EnterFailureState();
+		return;
+	}
+
+	EnterFailureState();
 }
 
 /**
@@ -328,7 +347,7 @@ static void HandlePreAppReceiveKey()
 		return;
 	}
 
-	if((gKeyRxContext.complete != 0u) && (gKeyRxContext.length > 0u))
+	if((gKeyRxContext.complete != 0u) && (gKeyRxContext.length > KEY_LENGTH_MIN_VALUE) && (gKeyRxContext.length <= KEY_LENGTH_MAX_VALUE))
 	{
 		gPreAppSubState = PRE_APP_KEY_READY;
 		return;
@@ -370,7 +389,7 @@ static int32_t CopyAuthSectionToRam()
 	if(authSize == 0u) return ERROR_GENERAL;
 
 	// Copying .auth section from FLASH to RAM
-	for(index = 0; index < authSize; index++) _sauth_ram[index] = _sauth_flash[index];
+	for(index = 0u; index < authSize; index++) _sauth_ram[index] = _sauth_flash[index];
 
 	return ERROR_OK;
 }
@@ -499,4 +518,40 @@ static void UpdateKeyTimeoutIndication(uint32_t elapsedTimeMs)
 
 	// Turning on LED1 after 10s
 	else if(elapsedTimeMs >= KEY_STAGE1_TIMEOUT_MS) ledSetLED(LED1, GPIO_PIN_SET);
+}
+
+static int32_t ExecuteVerifyFromRam()
+{
+	uint32_t verifyAddress = 0u;
+	AuthFunction_t verifyFunction = (AuthFunction_t)0;
+
+	if(_sauth_ram >= _eauth_ram) return ERROR_GENERAL;
+
+	verifyAddress = (uint32_t)_sauth_ram;
+
+	verifyFunction = (AuthFunction_t)verifyAddress;
+	verifyFunction();
+
+	return ERROR_OK;
+}
+
+static void StartApplication()
+{
+	uint32_t applicationStartAddress = APPLICATION_FLASH_ADDRESS;
+	ApplicationFunction_t applicationStart = (ApplicationFunction_t)0;
+
+	applicationStart = (ApplicationFunction_t)applicationStartAddress;
+
+	applicationStart();
+}
+
+__attribute__((section(".auth")))
+void verify()
+{
+	volatile uint32_t testCounter = 0u;
+
+	while(1)
+	{
+		testCounter++;
+	}
 }

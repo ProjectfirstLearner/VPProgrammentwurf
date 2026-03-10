@@ -35,9 +35,9 @@ ENTRY(Reset_Handler)
 MEMORY
 {
   /* RAM Memory Region incl. SRAM1 and SRAM2 */
-  RAM    (rw)      : ORIGIN = 0x20000000,  LENGTH = 128K
+  RAM    (rw)      : ORIGIN = 0x20000000,  LENGTH = 16K
   /* FLASH Memory Region using mapped address 0x08000000. */
-  FLASH  (rx)      : ORIGIN = 0x08000000,  LENGTH = 512K
+  FLASH  (rx)      : ORIGIN = 0x08000000,  LENGTH = 64K
 }
 
 /***** GLOBAL SYMBOLS ********************************************************/
