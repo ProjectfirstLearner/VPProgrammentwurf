@@ -121,7 +121,7 @@ static int32_t onEntryInitialization(State_t* pState, int32_t eventID)
     ledSetLED(LED2, LED_OFF);
     ledSetLED(LED3, LED_OFF);
     ledSetLED(LED4, LED_OFF);
-    HAL_Delay(500);
+    HAL_Delay(5000);
     return applicationSendEvent(EVT_ID_INIT_READY);
 }
 

@@ -196,7 +196,7 @@ static int32_t initializePeripherals()
     timerInitialize();
     adcInitialize();
 
-    schedInitialize();
+    schedInitialize(&gScheduler);
     applicationInitialize();
 
     return ERROR_OK;
