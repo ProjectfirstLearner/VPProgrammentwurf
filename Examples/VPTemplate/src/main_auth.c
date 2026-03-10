@@ -89,6 +89,7 @@ typedef struct
 } KeyRxContext_t;
 
 /***** PRIVATE PROTOTYPES ****************************************************/
+
 static int32_t initializePeripherals();
 
 static void EnterFailureState();
@@ -104,6 +105,9 @@ static void HandleFailureState();
 static void HandlePreAppWaitForTrigger();
 static void HandlePreAppReceiveKey();
 static void HandlePreAppKeyReady();
+
+// Auth Section Functions
+static int32_t CopyAuthSectionToRam();
 
 // Encrypt / Decrypt Functions
 static int32_t DecryptAuthSection(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength);
@@ -124,6 +128,13 @@ static uint8_t gPreAppInitialized = 0;
 
 static PreAppSubState_t gPreAppSubState = PRE_APP_WAIT_FOR_TRIGGER;
 static KeyRxContext_t gKeyRxContext = {0};
+
+// Auth Section Variables
+extern uint8_t _sauth_flash[];
+extern uint8_t _eauth_flash[];
+extern uint8_t _sauth_ram[];
+extern uint8_t _eauth_ram[];
+extern uint8_t _auth_size;
 
 /***** PUBLIC FUNCTIONS ******************************************************/
 /**
@@ -181,7 +192,7 @@ static void EnterFailureState()
 static void EnterPreAppState()
 {
 	gPreAppTickStart = HAL_GetTick();
-	gPreAppInitialized = INITIALIZE_TRUE;
+	gPreAppInitialized = PRE_APP_INITIALIZE_FLAG;
 	gPreAppSubState = PRE_APP_WAIT_FOR_TRIGGER;
 	gAuthState = STATE_PRE_APP;
 }
@@ -331,16 +342,37 @@ static void HandlePreAppReceiveKey()
 
 static void HandlePreAppKeyReady()
 {
+	uint32_t authSize = (uint32_t)(_eauth_flash - _sauth_flash);
+
 	ledSetLED(LED3, GPIO_PIN_SET);
 
-	/* Hier später:
-	 * 1. .auth von Flash nach RAM kopieren
-	 * 2. .auth verschlüsseln
-	 * 3. bei Erfolg -> STATE_START_APP
-	 */
+	if(CopyAuthSectionToRam() != ERROR_OK)
+	{
+		EnterFailureState();
+		return;
+	}
 
-	/* für Testzwecke */
-	// gAuthState = STATE_START_APP;
+	if(ProcessAuthDecryption(_sauth_ram, authSize, gKeyRxContext.buffer, gKeyRxContext.length) != ERROR_OK)
+	{
+		EnterFailureState();
+		return;
+	}
+
+	gAuthState = STATE_START_APP;
+}
+
+static int32_t CopyAuthSectionToRam()
+{
+	uint32_t index = 0u;
+	uint32_t authSize = (uint32_t)(_eauth_flash - _sauth_flash);
+
+	// Return if .auth size is 0
+	if(authSize == 0u) return ERROR_GENERAL;
+
+	// Copying .auth section from FLASH to RAM
+	for(index = 0; index < authSize; index++) _sauth_ram[index] = _sauth_flash[index];
+
+	return ERROR_OK;
 }
 
 /**
