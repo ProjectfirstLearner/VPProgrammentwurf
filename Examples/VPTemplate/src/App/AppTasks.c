@@ -17,6 +17,7 @@
 /***** INCLUDES **************************************************************/
 #include "Scheduler.h"
 #include "AppTasks.h"
+#include "Application.h"
 
 /***** PRIVATE CONSTANTS *****************************************************/
 
@@ -44,7 +45,7 @@ void taskApp10ms()
 
 void taskApp50ms()
 {
-
+	applicationRun();
 }
 
 void taskApp250ms()

@@ -39,7 +39,7 @@ MEMORY
   /* Stack Memory Region */
   STACK  (rw)	   : ORIGIN = 0x20013000,  LENGTH = 4K
   /* FLASH Memory Region using mapped address 0x08010000. */
-  FLASH  (rx)      : ORIGIN = 0x08010000,  LENGTH = 128K
+  FLASH  (rx)      : ORIGIN = 0x08000000,  LENGTH = 128K
 }
 
 /***** GLOBAL SYMBOLS ********************************************************/

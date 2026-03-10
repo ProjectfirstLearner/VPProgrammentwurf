@@ -31,6 +31,7 @@
 /***** PRIVATE PROTOTYPES ****************************************************/
 
 //defining functions that should be executing when in according state
+static int32_t onEntryInitialization(State_t* pState, int32_t eventID);
 static int32_t onStateInitialization(State_t* pState, int32_t eventID);
 static int32_t onStatePreOperational(State_t* pState, int32_t eventID);
 static int32_t onStateOperational(State_t* pState, int32_t eventID);
@@ -43,12 +44,12 @@ static int32_t onStateFailure(State_t* pState, int32_t eventID);
 //asigning the functions to states
 static State_t gStateList[] =
 {
-    {STATE_ID_INITIALIZATION,  NULL, onStateInitialization, NULL, false},
-    {STATE_ID_PRE_OPERATIONAL, NULL, onStatePreOperational, NULL, false},
-    {STATE_ID_OPERATIONAL,     NULL, onStateOperational,    NULL, false},
-    {STATE_ID_EMERGENCY,       NULL, onStateEmergency,      NULL, false},
-    {STATE_ID_TEST_MODE,       NULL, onStateTestMode,       NULL, false},
-    {STATE_ID_FAILURE,         NULL, onStateFailure,        NULL, false}
+    {STATE_ID_INITIALIZATION,  onEntryInitialization, 	onStateInitialization, NULL, false},
+    {STATE_ID_PRE_OPERATIONAL, NULL, 					onStatePreOperational, NULL, false},
+    {STATE_ID_OPERATIONAL,     NULL, 					onStateOperational,    NULL, false},
+    {STATE_ID_EMERGENCY,       NULL, 					onStateEmergency,      NULL, false},
+    {STATE_ID_TEST_MODE,       NULL, 					onStateTestMode,       NULL, false},
+    {STATE_ID_FAILURE,         NULL, 					onStateFailure,        NULL, false}
 };
 
 //State table, defining from which state can be switched to which
@@ -109,17 +110,40 @@ int32_t applicationSendEvent(int32_t eventID)
 }
 
 /***** PRIVATE FUNCTIONS *****************************************************/
-static int32_t onStateInitialization(State_t* pState, int32_t eventID) //pointer to State so can be read or written
+
+static int32_t onEntryInitialization(State_t* pState, int32_t eventID)
 {
-    (void)pState; 	//Platzhalter um unused zu vermeiden
-    (void)eventID;	//Platzhalter um unused zu vermeiden
-    return ERROR_OK; //rückgabewert ok, um nichts auszulösen
+    (void)pState;
+    (void)eventID;
+
+    ledSetLED(LED0, LED_ON);
+    ledSetLED(LED1, LED_OFF);
+    ledSetLED(LED2, LED_OFF);
+    ledSetLED(LED3, LED_OFF);
+    ledSetLED(LED4, LED_OFF);
+    HAL_Delay(500);
+    return applicationSendEvent(EVT_ID_INIT_READY);
+}
+
+static int32_t onStateInitialization(State_t* pState, int32_t eventID)
+{
+    (void)pState;
+    (void)eventID;
+
+    return ERROR_OK;
 }
 
 static int32_t onStatePreOperational(State_t* pState, int32_t eventID)
 {
     (void)pState;
     (void)eventID;
+
+    ledSetLED(LED0, LED_OFF);
+    ledSetLED(LED1, LED_ON);
+    ledSetLED(LED2, LED_OFF);
+    ledSetLED(LED3, LED_OFF);
+    ledSetLED(LED4, LED_OFF);
+
     return ERROR_OK;
 }
 

@@ -34,6 +34,7 @@
 
 #include "GlobalObjects.h"
 #include "AppTasks.h"//including tasks
+#include "App/Application.h"
 
 
 /***** PRIVATE CONSTANTS *****************************************************/
@@ -61,6 +62,10 @@ static Scheduler gScheduler;            // Global Scheduler instance
  */
 int main(void)
 {
+
+	__HAL_RCC_AHB1_FORCE_RESET();
+	__HAL_RCC_AHB1_RELEASE_RESET();
+
     // Initialize the HAL
     HAL_Init();
 
@@ -74,6 +79,8 @@ int main(void)
     schedInitialize(&gScheduler);
 
 
+    //init for state table
+    applicationInitialize();
 
     //giving the scheduler the actual time
     gScheduler.pGetHALTick = HAL_GetTick;
@@ -87,6 +94,7 @@ int main(void)
 
     while(1){
     	schedCycle(&gScheduler);//calling scheduler
+
     }
 
 
@@ -171,6 +179,9 @@ int main(void)
  */
 static int32_t initializePeripherals()
 {
+
+
+
     // Initialize UART used for Debug-Outputs
     uartInitialize(115200);
 
@@ -184,6 +195,9 @@ static int32_t initializePeripherals()
     // Initialize Timer, DMA and ADC for sensor measurements
     timerInitialize();
     adcInitialize();
+
+    schedInitialize();
+    applicationInitialize();
 
     return ERROR_OK;
 }
