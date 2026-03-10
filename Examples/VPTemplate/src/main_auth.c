@@ -21,12 +21,9 @@
 #include "HardwareConfig.h"
 
 #include "Util/Global.h"
-#include "Util/Log/printf.h"
-#include "Util/Log/LogOutput.h"
 
 #include "UARTModule.h"
 #include "LEDModule.h"
-#include "DisplayModule.h"
 
 
 /***** PRIVATE CONSTANTS *****************************************************/
@@ -34,30 +31,37 @@
 
 /***** PRIVATE MACROS ********************************************************/
 
-#define UART_A_RX_FAILURE_MS			15000
-#define KEY_STAGE1_TIMEOUT_MS			10000
-#define KEY_STAGE2_TIMEOUT_MS			30000
-#define KEY_FAILURE_TIMEOUT_MS			45000
+// TIMEOUT CONSTANTS
 
-#define TIMER_START_VALUE				0
-#define EMPTY_UART_VALUE				0
+#define UART_A_RX_FAILURE_MS			15000u
+#define KEY_STAGE1_TIMEOUT_MS			10000u
+#define KEY_STAGE2_TIMEOUT_MS			30000u
+#define KEY_FAILURE_TIMEOUT_MS			45000u
 
-#define INITIALIZE_FALSE				0
-#define INITIALIZE_TRUE					1
+// UART CONSTANTS
 
-#define UART_RX_ONE_BYTE				1
+#define UART_RX_BYTE_COUNT				1u
 #define UART_TRIGGER_CHAR				'A'
 #define UART_KEY_TERMINATOR				'\n'
 #define UART_KEY_MAX_LENGTH				8u
 
-#define LED_FLASH_PERIOD_MS				250
+// INITIALIZATION FLAGS
+
+#define PRE_APP_INITIALIZE_FLAG			1u
+#define KEY_COMPLETE_FLAG				1u
+#define KEY_OVERFLOW_FLAG				1u
+
+// LED CONTROL
+
+#define LED_FLASH_PERIOD_MS				250u
+#define LED_FLASH_DIVIDER				2u
 
 /***** PRIVATE TYPES *********************************************************/
 
-// State Machine States
+// State-Machine States
 typedef enum
 {
-	STATE_BOOTUP = 0, //giving identification 0, 1-3 will be added automatically to the other states
+	STATE_BOOTUP = 0,
 	STATE_FAILURE,
 	STATE_PRE_APP,
 	STATE_START_APP
@@ -71,7 +75,9 @@ typedef enum
 	PRE_APP_KEY_READY
 } PreAppSubState_t;
 
-// Receiving Byte from Python
+/**
+ * @brief Receives the decryption key via UART.
+ */
 typedef struct
 {
 	uint8_t buffer[UART_KEY_MAX_LENGTH];
@@ -84,15 +90,24 @@ typedef struct
 
 /***** PRIVATE PROTOTYPES ****************************************************/
 static int32_t initializePeripherals();
+
+static void EnterFailureState();
+static void EnterPreAppState();
+
+// State-Machine Functions
 static void HandleBootupState();
 static void HandlePreAppState();
 static void HandleAppStartState();
 static void HandleFailureState();
 
-static uint32_t DecryptAuthSection(uint8_t* pData, uint32_t dataLength,
-								   const uint8_t* pKey, uint32_t keyLength);
-static uint32_t ProcessAuthDecryption(uint8_t* pData, uint32_t dataLength,
-								      const uint8_t* pKey, uint32_t keyLength);
+// Pre-Application Helper Functions
+static void HandlePreAppWaitForTrigger();
+static void HandlePreAppReceiveKey();
+static void HandlePreAppKeyReady();
+
+// Encrypt / Decrypt Functions
+static int32_t DecryptAuthSection(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength);
+static int32_t ProcessAuthDecryption(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength);
 
 // Key Functions
 static void KeyRxInit(KeyRxContext_t* pContext);
@@ -102,10 +117,10 @@ static void UpdateKeyTimeoutIndication(uint32_t elapsedTimeMs);
 
 /***** PRIVATE VARIABLES *****************************************************/
 
-static AuthState_t gAuthState = STATE_BOOTUP; //global within scope
+static AuthState_t gAuthState = STATE_BOOTUP;
 
-static uint32_t gPreAppTickStart = TIMER_START_VALUE;
-static uint8_t gPreAppInitialized = INITIALIZE_FALSE;
+static uint32_t gPreAppTickStart = 0;
+static uint8_t gPreAppInitialized = 0;
 
 static PreAppSubState_t gPreAppSubState = PRE_APP_WAIT_FOR_TRIGGER;
 static KeyRxContext_t gKeyRxContext = {0};
@@ -118,23 +133,23 @@ int main(void)
 {
     while (1)
     {
-    	//implementing state machine using switch case
+    	// State Machine using Switch
     	switch (gAuthState){
 
     		case STATE_BOOTUP:
-    			//all init functions
+    			// Boot-up Function
     			HandleBootupState();
     			break;
     		case STATE_PRE_APP:
-    			//allpreStarting functions
+    			// Pre-Application Function
     			HandlePreAppState();
     			break;
     		case STATE_START_APP:
-    			//all functions to start app
+    			// Application Start Function
     			HandleAppStartState();
     			break;
     		case STATE_FAILURE:
-    			//functions to handle Failure
+    			// Failure Function
     			HandleFailureState();
     			break;
     	}
@@ -143,8 +158,7 @@ int main(void)
 
 /***** PRIVATE FUNCTIONS *****************************************************/
 /**
- * @brief Initializes the used peripherals like GPIO,
- * ADC, DMA and Timer Interrupts
+ * @brief Initializes the used peripherals
  *
  * @return Returns ERROR_OK if no error occurred
  */
@@ -159,35 +173,46 @@ static int32_t initializePeripherals()
     return ERROR_OK;
 }
 
+static void EnterFailureState()
+{
+	gAuthState = STATE_FAILURE;
+}
+
+static void EnterPreAppState()
+{
+	gPreAppTickStart = HAL_GetTick();
+	gPreAppInitialized = INITIALIZE_TRUE;
+	gPreAppSubState = PRE_APP_WAIT_FOR_TRIGGER;
+	gAuthState = STATE_PRE_APP;
+}
+
 /**
- * @brief Handles Bootup of authenticator
+ * @brief Handles Boot-up of authenticator
  */
 static void HandleBootupState()
 {
-	HAL_StatusTypeDef halStatus;
-
-	halStatus = HAL_Init();
-	// If HAL initialization was not Successful: State -> FAILURE
-	if(halStatus != HAL_OK) {
-		gAuthState = STATE_FAILURE;
+	// If HAL initialization was Successful continue otherwise State -> FAILURE
+	if(HAL_Init() != HAL_OK)
+	{
+		EnterFailureState();
 		return;
 	}
 
 	// Set correct Clock Timing
 	SystemClock_Config();
 
-	// If Peripheral initialization was not Successful: State -> FAILURE
-	if(initializePeripherals() != ERROR_OK) {
-		gAuthState = STATE_FAILURE;
+	// If Peripheral initialization was Successful continue otherwise State -> FAILURE
+	if(initializePeripherals() != ERROR_OK)
+	{
+		EnterFailureState();
 		return;
 	}
 
-	// Turning on LED D0 and Resetting D1 & D2
+	// Turning on LED D0
 	ledSetLED(LED0, GPIO_PIN_SET);
-	ledSetLED(LED1, GPIO_PIN_RESET);
-	ledSetLED(LED2, GPIO_PIN_RESET);
 
-	gAuthState = STATE_PRE_APP;
+	// Setting the State to Pre-Application
+	EnterPreAppState();
 }
 
 /**
@@ -195,218 +220,28 @@ static void HandleBootupState()
  */
 static void HandlePreAppState()
 {
-	// Set the Timer for Timeout to 0
-	uint32_t timeElapsed = TIMER_START_VALUE;
-	int8_t hasChar = EMPTY_UART_VALUE;
-	uint8_t ch = EMPTY_UART_VALUE;
-	uint32_t receiveStatus = UART_ERR_OK;
-
 	// Initialize Tick for Timer only once
-	if (gPreAppInitialized == INITIALIZE_FALSE)
+	if (gPreAppInitialized == 0)
 	{
 		gPreAppTickStart = HAL_GetTick();
-		gPreAppInitialized = INITIALIZE_TRUE;
+		gPreAppInitialized = PRE_APP_INITIALIZE_FLAG;
 		gPreAppSubState = PRE_APP_WAIT_FOR_TRIGGER;
 	}
 
 	switch(gPreAppSubState)
 	{
 		case PRE_APP_WAIT_FOR_TRIGGER:
-		{
-			// Switching to Failure-State if the 15s timeout is reached
-			timeElapsed = HAL_GetTick() - gPreAppTickStart;
-			if(timeElapsed >= UART_A_RX_FAILURE_MS)
-			{
-			    gAuthState = STATE_FAILURE;
-			    return;
-			}
+			HandlePreAppWaitForTrigger();
+			return;
 
-			// Reading UART Input
-			uartHasData(&hasChar);
-
-		    if (hasChar != EMPTY_UART_VALUE)
-		    {
-		        receiveStatus = uartReceiveData(&ch, UART_RX_ONE_BYTE);
-
-		        if ((receiveStatus == UART_ERR_OK) && (ch == UART_TRIGGER_CHAR))
-		        {
-		            KeyRxInit(&gKeyRxContext);
-		            gPreAppSubState = PRE_APP_RECEIVE_KEY;
-		            return;
-		        }
-		    }
-		    break;
-		}
 		case PRE_APP_RECEIVE_KEY:
-		{
-			KeyRxProcess(&gKeyRxContext);
-			timeElapsed = KeyRxGetElapsedTimeMs(&gKeyRxContext);
-
-			UpdateKeyTimeoutIndication(timeElapsed);
-
-			if(gKeyRxContext.overflow != 0)
-			{
-				gAuthState = STATE_FAILURE;
-				return;
-			}
-
-			if(timeElapsed >= KEY_FAILURE_TIMEOUT_MS)
-			{
-				gAuthState = STATE_FAILURE;
-				return;
-			}
-
-			if(gKeyRxContext.complete != 0)
-			{
-				if(gKeyRxContext.length == 0)
-				{
-					gAuthState = STATE_FAILURE;
-					return;
-				}
-
-				gPreAppSubState = PRE_APP_KEY_READY;
-				return;
-			}
+			HandlePreAppReceiveKey();
 			break;
-		}
+
 		case PRE_APP_KEY_READY:
-		{
-			ledSetLED(LED3, GPIO_PIN_SET);
-
-			// Hier .auth vom FLASH in RAM kopieren
-
-			//gAuthState = STATE_START_APP;
-			//return;
-		}
-	}
-}
-
-/**
- * @brief Function for Decrypting Auth Key
- */
-static uint32_t DecryptAuthSection(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength)
-{
-	uint32_t dataIndex	= 0;
-	uint32_t keyIndex	= 0;
-
-	// Check for Valid Data and Null-Pointer
-	if((pData == NULL) || (pKey == NULL) || (dataLength == 0) || (keyLength == 0)) return ERROR_GENERAL;
-
-	for(dataIndex = 0; dataIndex < dataLength; ++dataIndex) {
-		pData[dataIndex] = pData[dataIndex] ^ pKey[keyIndex];
-
-		keyIndex++;
-		if(keyIndex >= keyLength) keyIndex = 0;
-	}
-
-	return ERROR_OK;
-}
-
-/**
- * @brief Function for Decrypting Auth Key
- */
-static uint32_t ProcessAuthDecryption(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength)
-{
-	if ((pData == NULL) || (pKey == NULL)) return ERROR_GENERAL;
-
-#ifdef ENABLE_ENCRYPTION
-	return DecryptAuthSection(pData, dataLength, pKey, keyLength);
-#else
-	(void)dataLength;
-	(void)keyLength;
-	return ERROR_OK;
-#endif
-}
-
-/**
- * @brief Function for Handeling Key Receiving
- */
-static void KeyRxInit(KeyRxContext_t* pContext)
-{
-	uint32_t index = 0;
-
-	if(pContext == NULL) return;
-
-	for(index = 0; index < UART_KEY_MAX_LENGTH; index++) {
-		pContext->buffer[index] = 0;
-	}
-
-	pContext->length		= 0;
-	pContext->complete		= 0;
-	pContext->overflow		= 0;
-	pContext->startTick		= HAL_GetTick();
-	pContext->initialized	= INITIALIZE_TRUE;
-}
-
-/**
- * @brief Function for Processing Key
- */
-static void KeyRxProcess(KeyRxContext_t* pContext)
-{
-	int8_t hasChar = EMPTY_UART_VALUE;
-	uint8_t ch = EMPTY_UART_VALUE;
-	uint32_t receiveStatus = UART_ERR_OK;
-
-	if((pContext == NULL) || (pContext->initialized == INITIALIZE_FALSE) || (pContext->complete != 0)) return;
-
-	while(1)
-	{
-		hasChar = EMPTY_UART_VALUE;
-		uartHasData(&hasChar);
-
-		if(hasChar == EMPTY_UART_VALUE) break;
-
-		receiveStatus = uartReceiveData(&ch, UART_RX_ONE_BYTE);
-
-		if(receiveStatus != UART_ERR_OK) break;
-
-		if(ch == (uint8_t)UART_KEY_TERMINATOR)
-		{
-			pContext->complete = 1;
+			HandlePreAppKeyReady();
 			break;
-		}
-
-		if(pContext->length < UART_KEY_MAX_LENGTH)
-		{
-			pContext->buffer[pContext->length] = ch;
-			pContext->length++;
-		}
-		else
-		{
-			pContext->overflow = 1;
-			break;
-		}
 	}
-}
-
-/**
- * @brief Function for getting Elapsed Time
- */
-static uint32_t KeyRxGetElapsedTimeMs(const KeyRxContext_t* pContext)
-{
-	if((pContext == NULL) || (pContext->initialized == INITIALIZE_FALSE)) return 0;
-
-	return (HAL_GetTick() - pContext->startTick);
-}
-
-/**
- * @brief Function for updating Timeout Indicators
- */
-static void UpdateKeyTimeoutIndication(uint32_t elapsedTimeMs)
-{
-	// Failure State after 45s
-	if(elapsedTimeMs >= KEY_FAILURE_TIMEOUT_MS) gAuthState = STATE_FAILURE;
-
-	// LED1 blinking after 30s
-	else if(elapsedTimeMs >= KEY_STAGE2_TIMEOUT_MS)
-	{
-		if(((HAL_GetTick() / LED_FLASH_PERIOD_MS) % 2) == 0) ledSetLED(LED1, GPIO_PIN_SET);
-
-		else ledSetLED(LED1, GPIO_PIN_RESET);
-	}
-
-	// Turning on LED1 after 10s
-	else if(elapsedTimeMs >= KEY_STAGE1_TIMEOUT_MS) ledSetLED(LED1, GPIO_PIN_SET);
 }
 
 /**
@@ -428,4 +263,208 @@ static void HandleFailureState()
 	ledSetLED(LED1, GPIO_PIN_RESET);
 	ledSetLED(LED2, GPIO_PIN_RESET);
 	ledSetLED(LED4, GPIO_PIN_SET);
+}
+
+
+static void HandlePreAppWaitForTrigger()
+{
+	// Set the Timer for Timeout to 0
+	uint32_t timeElapsed = HAL_GetTick() - gPreAppTickStart;
+	int8_t hasChar = 0;
+	uint8_t ch = 0;
+	uint32_t receiveStatus = UART_ERR_OK;
+
+	// Switching to Failure-State if the 15s timeout is reached
+	if(timeElapsed >= UART_A_RX_FAILURE_MS)
+	{
+		EnterFailureState();
+		return;
+	}
+
+	// Reading UART Input
+	uartHasData(&hasChar);
+
+	if (hasChar == 0) return;
+
+	receiveStatus = uartReceiveData(&ch, UART_RX_BYTE_COUNT);
+	if ((receiveStatus == UART_ERR_OK) && (ch == (uint8_t)UART_TRIGGER_CHAR))
+	{
+		KeyRxInit(&gKeyRxContext);
+		gPreAppSubState = PRE_APP_RECEIVE_KEY;
+	}
+}
+
+static void HandlePreAppReceiveKey()
+{
+	uint32_t timeElapsed = 0u;
+
+	KeyRxProcess(&gKeyRxContext);
+	timeElapsed = KeyRxGetElapsedTimeMs(&gKeyRxContext);
+
+	UpdateKeyTimeoutIndication(timeElapsed);
+
+	if(gAuthState == STATE_FAILURE) return;
+
+	if(gKeyRxContext.overflow != 0u)
+	{
+		EnterFailureState();
+		return;
+	}
+
+	if(timeElapsed >= KEY_FAILURE_TIMEOUT_MS)
+	{
+		EnterFailureState();
+		return;
+	}
+
+	if((gKeyRxContext.complete != 0u) && (gKeyRxContext.length > 0u))
+	{
+		gPreAppSubState = PRE_APP_KEY_READY;
+		return;
+	}
+
+	if((gKeyRxContext.complete != 0u) && (gKeyRxContext.length == 0u))
+	{
+		EnterFailureState();
+	}
+}
+
+static void HandlePreAppKeyReady()
+{
+	ledSetLED(LED3, GPIO_PIN_SET);
+
+	/* Hier später:
+	 * 1. .auth von Flash nach RAM kopieren
+	 * 2. .auth verschlüsseln
+	 * 3. bei Erfolg -> STATE_START_APP
+	 */
+
+	/* für Testzwecke */
+	// gAuthState = STATE_START_APP;
+}
+
+/**
+ * @brief Decrypts the .auth section using XOR and the received key.
+ */
+static int32_t DecryptAuthSection(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength)
+{
+	uint32_t dataIndex	= 0;
+	uint32_t keyIndex	= 0;
+
+	// Check for Valid Data and Null-Pointer
+	if((pData == NULL) || (pKey == NULL) || (dataLength == 0) || (keyLength == 0)) return ERROR_GENERAL;
+
+	for(dataIndex = 0; dataIndex < dataLength; ++dataIndex) {
+		pData[dataIndex] = pData[dataIndex] ^ pKey[keyIndex];
+
+		keyIndex++;
+		if(keyIndex >= keyLength) keyIndex = 0;
+	}
+
+	return ERROR_OK;
+}
+
+/**
+ * @brief Function for Decrypting Auth Key
+ */
+static int32_t ProcessAuthDecryption(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength)
+{
+	if ((pData == NULL) || (pKey == NULL)) return ERROR_GENERAL;
+
+#ifdef ENABLE_ENCRYPTION
+	return DecryptAuthSection(pData, dataLength, pKey, keyLength);
+#else
+	(void)dataLength;
+	(void)keyLength;
+	return ERROR_OK;
+#endif
+}
+
+/**
+ * @brief Function for Handeling Key Receiving
+ */
+static void KeyRxInit(KeyRxContext_t* pContext)
+{
+	uint32_t index = 0u;
+
+	if(pContext == NULL) return;
+
+	for(index = 0u; index < UART_KEY_MAX_LENGTH; index++) pContext->buffer[index] = 0u;
+
+	pContext->length		= 0u;
+	pContext->complete		= 0u;
+	pContext->overflow		= 0u;
+	pContext->startTick		= HAL_GetTick();
+	pContext->initialized	= PRE_APP_INITIALIZE_FLAG;
+}
+
+/**
+ * @brief Function for Processing Key
+ */
+static void KeyRxProcess(KeyRxContext_t* pContext)
+{
+	int8_t hasChar = 0;
+	uint8_t ch = 0;
+	uint32_t receiveStatus = UART_ERR_OK;
+
+	if((pContext == NULL) || (pContext->initialized == 0) || (pContext->complete != 0)) return;
+
+	while(1)
+	{
+		hasChar = 0;
+		uartHasData(&hasChar);
+
+		if(hasChar == 0) break;
+
+		receiveStatus = uartReceiveData(&ch, UART_RX_BYTE_COUNT);
+
+		if(receiveStatus != UART_ERR_OK) break;
+
+		if(ch == UART_KEY_TERMINATOR)
+		{
+			pContext->complete = KEY_COMPLETE_FLAG;
+			break;
+		}
+
+		if(pContext->length < UART_KEY_MAX_LENGTH)
+		{
+			pContext->buffer[pContext->length] = ch;
+			pContext->length++;
+		}
+		else
+		{
+			pContext->overflow = KEY_OVERFLOW_FLAG;
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Function for getting Elapsed Time
+ */
+static uint32_t KeyRxGetElapsedTimeMs(const KeyRxContext_t* pContext)
+{
+	if((pContext == NULL) || (pContext->initialized == 0u)) return 0u;
+
+	return HAL_GetTick() - pContext->startTick;
+}
+
+/**
+ * @brief Function for updating Timeout Indicators
+ */
+static void UpdateKeyTimeoutIndication(uint32_t elapsedTimeMs)
+{
+	// Failure State after 45s
+	if(elapsedTimeMs >= KEY_FAILURE_TIMEOUT_MS) EnterFailureState();
+
+	// LED1 blinking after 30s
+	else if(elapsedTimeMs >= KEY_STAGE2_TIMEOUT_MS)
+	{
+		if(((HAL_GetTick() / LED_FLASH_PERIOD_MS) % LED_FLASH_DIVIDER) == 0u) ledSetLED(LED1, GPIO_PIN_SET);
+
+		else ledSetLED(LED1, GPIO_PIN_RESET);
+	}
+
+	// Turning on LED1 after 10s
+	else if(elapsedTimeMs >= KEY_STAGE1_TIMEOUT_MS) ledSetLED(LED1, GPIO_PIN_SET);
 }
