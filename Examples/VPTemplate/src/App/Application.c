@@ -26,7 +26,13 @@
 #include "LEDModule.h"
 
 #include "Util/StateTable/StateTable.h" //state table
+#include "GasSensor.h"
 
+/******************************GlobalObjects***********************************/
+
+
+GasSensor gGasSensor1;
+GasSensor gGasSensor2;
 
 /***** PRIVATE PROTOTYPES ****************************************************/
 

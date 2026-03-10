@@ -35,7 +35,7 @@
 #include "GlobalObjects.h"
 #include "AppTasks.h"//including tasks
 #include "App/Application.h"
-
+#include "App/GasSensor.h"
 
 /***** PRIVATE CONSTANTS *****************************************************/
 
@@ -77,6 +77,9 @@ int main(void)
 
     // Initialize Scheduler
     schedInitialize(&gScheduler);
+
+    gasSensorInitialize(&gGasSensor1, 204U);
+    gasSensorInitialize(&gGasSensor2, 204U);
 
 
     //init for state table
