@@ -17,6 +17,7 @@
 /***** INCLUDES **************************************************************/
 #include "stm32g4xx_hal.h"
 #include "System.h"
+#include "string.h"
 
 #include "HardwareConfig.h"
 
@@ -42,7 +43,7 @@
 
 #define UART_RX_BYTE_COUNT				1u
 #define UART_TRIGGER_CHAR				'A'
-#define UART_KEY_TERMINATOR				'\n'
+#define UART_KEY_TERMINATOR				'\r'
 #define UART_KEY_MAX_LENGTH				8u
 
 // INITIALIZATION FLAGS
@@ -62,6 +63,11 @@
 
 // RAM
 #define APPLICATION_FLASH_ADDRESS		0x08010000u
+#define APPLICATION_START_ADDRESS		0x08010204u
+#define SIGNATURE_BYTE_0				'U'
+#define SIGNATURE_BYTE_1				'M'
+#define SIGNATURE_BYTE_2				'M'
+#define SIGNATURE_BYTE_3				'S'
 
 /***** PRIVATE TYPES *********************************************************/
 
@@ -116,12 +122,8 @@ static void HandlePreAppWaitForTrigger();
 static void HandlePreAppReceiveKey();
 static void HandlePreAppKeyReady();
 
-// Auth Section Functions
-static int32_t CopyAuthSectionToRam();
-
-// Encrypt / Decrypt Functions
-static int32_t DecryptAuthSection(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength);
-static int32_t ProcessAuthDecryption(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength);
+// Encrypt / Decrypt and Copy Functions
+static int32_t CopyDecryptAuthSection(const uint8_t* pKey, uint32_t keyLength);
 
 // Key Functions
 static void KeyRxInit(KeyRxContext_t* pContext);
@@ -131,7 +133,7 @@ static void UpdateKeyTimeoutIndication(uint32_t elapsedTimeMs);
 
 // Verify Functions
 static int32_t ExecuteVerifyFromRam();
-static void StartApplication();
+void verify() __attribute__((section(".auth"), noinline));
 
 /***** PRIVATE VARIABLES *****************************************************/
 
@@ -144,10 +146,9 @@ static PreAppSubState_t gPreAppSubState = PRE_APP_WAIT_FOR_TRIGGER;
 static KeyRxContext_t gKeyRxContext = {0};
 
 // Auth Section Variables
-extern uint8_t _sauth_flash[];
-extern uint8_t _eauth_flash[];
-extern uint8_t _sauth_ram[];
-extern uint8_t _eauth_ram[];
+extern uint8_t _sauth;
+extern uint8_t _eauth;
+extern uint8_t _sloadauth;
 
 /***** PUBLIC FUNCTIONS ******************************************************/
 /**
@@ -273,8 +274,6 @@ static void HandlePreAppState()
  */
 static void HandleAppStartState()
 {
-	ledSetLED(LED2, GPIO_PIN_SET);
-
 	if(ExecuteVerifyFromRam() != ERROR_OK)
 	{
 		EnterFailureState();
@@ -291,7 +290,6 @@ static void HandleFailureState()
 {
 	ledSetLED(LED0, GPIO_PIN_RESET);
 	ledSetLED(LED1, GPIO_PIN_RESET);
-	ledSetLED(LED2, GPIO_PIN_RESET);
 	ledSetLED(LED4, GPIO_PIN_SET);
 }
 
@@ -361,17 +359,7 @@ static void HandlePreAppReceiveKey()
 
 static void HandlePreAppKeyReady()
 {
-	uint32_t authSize = (uint32_t)(_eauth_flash - _sauth_flash);
-
-	ledSetLED(LED3, GPIO_PIN_SET);
-
-	if(CopyAuthSectionToRam() != ERROR_OK)
-	{
-		EnterFailureState();
-		return;
-	}
-
-	if(ProcessAuthDecryption(_sauth_ram, authSize, gKeyRxContext.buffer, gKeyRxContext.length) != ERROR_OK)
+	if(CopyDecryptAuthSection(gKeyRxContext.buffer, gKeyRxContext.length) != ERROR_OK)
 	{
 		EnterFailureState();
 		return;
@@ -380,49 +368,24 @@ static void HandlePreAppKeyReady()
 	gAuthState = STATE_START_APP;
 }
 
-static int32_t CopyAuthSectionToRam()
+static int32_t CopyDecryptAuthSection(const uint8_t* pKey, uint32_t keyLength)
 {
-	uint32_t index = 0u;
-	uint32_t authSize = (uint32_t)(_eauth_flash - _sauth_flash);
+	uint8_t *dst = &_sauth;
+	uint8_t *src = &_sloadauth;
 
-	// Return if .auth size is 0
-	if(authSize == 0u) return ERROR_GENERAL;
+	size_t section_length = (size_t)(&_eauth - &_sauth);
 
-	// Copying .auth section from FLASH to RAM
-	for(index = 0u; index < authSize; index++) _sauth_ram[index] = _sauth_flash[index];
+	memcpy(dst, src, section_length);
 
-	return ERROR_OK;
-}
-
-/**
- * @brief Decrypts the .auth section using XOR and the received key.
- */
-static int32_t DecryptAuthSection(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength)
-{
-	uint32_t dataIndex	= 0;
-	uint32_t keyIndex	= 0;
-
-	// Check for Valid Data and Null-Pointer
-	if((pData == NULL) || (pKey == NULL) || (dataLength == 0) || (keyLength == 0)) return ERROR_GENERAL;
-
-	for(dataIndex = 0; dataIndex < dataLength; ++dataIndex) {
-		pData[dataIndex] = pData[dataIndex] ^ pKey[keyIndex];
-
-		keyIndex++;
-		if(keyIndex >= keyLength) keyIndex = 0;
+	for(size_t i = 0; i < section_length; i++)
+	{
+		dst[i] ^= pKey[i % keyLength];
 	}
 
+	__DSB();
+	__ISB();
+
 	return ERROR_OK;
-}
-
-/**
- * @brief Function for Decrypting Auth Key
- */
-static int32_t ProcessAuthDecryption(uint8_t* pData, uint32_t dataLength, const uint8_t* pKey, uint32_t keyLength)
-{
-	if ((pData == NULL) || (pKey == NULL)) return ERROR_GENERAL;
-
-	return DecryptAuthSection(pData, dataLength, pKey, keyLength);
 }
 
 /**
@@ -519,9 +482,8 @@ static int32_t ExecuteVerifyFromRam()
 	uint32_t verifyAddress = 0u;
 	AuthFunction_t verifyFunction = (AuthFunction_t)0;
 
-	if(_sauth_ram >= _eauth_ram) return ERROR_GENERAL;
-
-	verifyAddress = (uint32_t)_sauth_ram;
+	verifyAddress = (uint32_t)&_sauth;
+	verifyAddress |= 0x1u;
 
 	verifyFunction = (AuthFunction_t)verifyAddress;
 	verifyFunction();
@@ -529,23 +491,19 @@ static int32_t ExecuteVerifyFromRam()
 	return ERROR_OK;
 }
 
-static void StartApplication()
+__attribute__((section(".auth"), noinline))
+void verify(void)
 {
-	uint32_t applicationStartAddress = APPLICATION_FLASH_ADDRESS;
-	ApplicationFunction_t applicationStart = (ApplicationFunction_t)0;
+	volatile const uint8_t* pSignature = (const uint8_t*)APPLICATION_FLASH_ADDRESS;
 
-	applicationStart = (ApplicationFunction_t)applicationStartAddress;
+	if (pSignature[0] != SIGNATURE_BYTE_0) return;
+	if (pSignature[1] != SIGNATURE_BYTE_1) return;
+	if (pSignature[2] != SIGNATURE_BYTE_2) return;
+	if (pSignature[3] != SIGNATURE_BYTE_3) return;
+
+	__disable_irq();
+
+	ApplicationFunction_t applicationStart = (ApplicationFunction_t)(APPLICATION_START_ADDRESS | 0x1u);
 
 	applicationStart();
-}
-
-__attribute__((section(".auth")))
-void verify()
-{
-	volatile uint32_t testCounter = 0u;
-
-	while(1)
-	{
-		testCounter++;
-	}
 }

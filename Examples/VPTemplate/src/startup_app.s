@@ -34,12 +34,20 @@
  
  EndMarker:
  	.word 0xABADA55
- 	
+ 
+/* SCB_VTOR register address */
+.equ SCB_VTOR, 0xE000ED08
  
 .section .text.StartApp_Handler
 .type StartApp_Handler, %function
 .global StartApp_Handler
 StartApp_Handler:
+	ldr r0, =_isr_vector
+	ldr r1, =SCB_VTOR
+	str r0, [r1]
+	
+	dsb
+	isb
     /* Copy the data segment initializers from flash to SRAM */
     ldr r0, =_sdata
     ldr r1, =_edata

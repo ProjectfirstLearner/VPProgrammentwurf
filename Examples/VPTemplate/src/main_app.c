@@ -41,7 +41,7 @@
 
 
 /***** PRIVATE CONSTANTS *****************************************************/
-
+const char signature[] __attribute__ ((section (".signature"))) = "UMMS";
 
 /***** PRIVATE MACROS ********************************************************/
 
@@ -94,8 +94,6 @@ int main(void)
     gScheduler.pTask_10ms = taskApp10ms;
     gScheduler.pTask_50ms = taskApp50ms;
     gScheduler.pTask_250ms = taskApp250ms;
-
-
 
     while(1){
     	schedCycle(&gScheduler);//calling scheduler

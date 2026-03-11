@@ -60,7 +60,7 @@ DEF	= -DSTM32G4xx -DSTM32G474xx -DUSE_HAL_DRIVER -DF_CPU=170000000L -DDEBUG_BUIL
 ASFLAGS = -g -mcpu=cortex-m4 -mthumb
 
 # Compiler Flags
-CFLAGS = -c -O0 -g -mcpu=cortex-m4 -mthumb
+CFLAGS = -c -O0 -g -mcpu=cortex-m4 -mthumb -mlong-calls
 CFLAGS += -Wall -ffunction-sections -fdata-sections -fstack-usage -fdump-rtl-expand
 CFLAGS += -Wno-unused-function -nostdlib
 

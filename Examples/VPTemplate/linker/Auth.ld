@@ -108,19 +108,6 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
 
-  /* section for encrypted authenticator starter code in FLASH */
-  .auth :
-  {
-  	. = ALIGN(4);
-  	_sauth_flash = .;
-  	
-  	KEEP(*(.auth))
-  	KEEP(*(.auth*))
-  	
-  	. = ALIGN(4);
-  	_eauth_flash = .;
-  } >FLASH
-
   /* Uninitialized data section */
   . = ALIGN(4);
   .bss (NOLOAD):
@@ -137,17 +124,20 @@ SECTIONS
 
   } >RAM
   
+  _sloadauth = LOADADDR(.auth);
+  
   /* Reserved RAM area for copied/decrypted .auth section */
-  .auth_ram (NOLOAD) :
+  .auth :
   {
  	. = ALIGN(4);
- 	_sauth_ram = .;
+ 	_sauth = .;
  	
- 	. += SIZEOF(.auth);
+ 	KEEP(*(.auth))
+ 	KEEP(*(.auth*))
  	
  	. = ALIGN(4);
- 	_eauth_ram = .;
-  } >RAM
+ 	_eauth = .;
+  } >RAM AT> FLASH
 
   .heap (NOLOAD):
   {
