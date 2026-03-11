@@ -16,12 +16,14 @@
 #
 # Define the commands which should be used to build the files
 # Cross-compilation commands
-CC      = arm-none-eabi-gcc
-AR      = arm-none-eabi-ar
-AS		= arm-none-eabi-as
-LD		= arm-none-eabi-gcc
-OBJCOPY = arm-none-eabi-objcopy
-SIZE    = arm-none-eabi-size
+CC      	= arm-none-eabi-gcc
+AR      	= arm-none-eabi-ar
+AS			= arm-none-eabi-as
+LD			= arm-none-eabi-gcc
+OBJCOPY 	= arm-none-eabi-objcopy
+SIZE    	= arm-none-eabi-size
+PYTHON		= python3
+SCRIPT_DIR	= ../../Scripts
 
 
 ###############################################################################
@@ -34,6 +36,10 @@ OBJ_DIR   = obj
 LIB_DIR	  = lib
 BLD_DIR   = build
 
+# Auth Section Encryption
+AUTH_SECTION_RAW = $(BLD_DIR)/auth_section.bin
+AUTH_SECTION_ENC = $(BLD_DIR)/auth_section_enc.bin
+
 # Locate the main libraries
 HAL = $(LIB_DIR)/HAL
 HAL_SRC = $(HAL)/Src
@@ -45,7 +51,6 @@ AUTH_LD_FILE = linker/Auth.ld
 
 # Pre-Processor defines to configure the HAL library
 DEF	= -DSTM32G4xx -DSTM32G474xx -DUSE_HAL_DRIVER -DF_CPU=170000000L -DDEBUG_BUILD
-
 
 ###############################################################################
 # Flags for the Assembler, Compiler and Linker
@@ -180,9 +185,15 @@ $(BLD_DIR)/app.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_APP) $(APP_OBJS_C) | $(APP_
 	@echo "  LD      $(notdir $@)"
 	@$(LD) $^ $(LDFLAGS) $(INC) -T$(APP_LD_FILE) -Wl,-Map $(BLD_DIR)/app.map -o $@
 
-$(BLD_DIR)/auth.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_AUTH) $(AUTH_OBJS_C) | $(AUTH_LD_FILE)
+$(BLD_DIR)/auth.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_AUTH) $(AUTH_OBJS_C) $(SCRIPT_DIR)/encrypt_file.py | $(AUTH_LD_FILE)
 	@echo "  LD      $(notdir $@)"
 	@$(LD) $^ $(LDFLAGS) $(INC) -T$(AUTH_LD_FILE) -Wl,-Map $(BLD_DIR)/auth.map -o $@
+	@echo " OBJCOPY dump .auth"
+	@$(OBJCOPY) --dump-section .auth=$(AUTH_SECTION_RAW) $@
+	@echo " PYTHON encrypt .auth"
+	@$(PYTHON) $(SCRIPT_DIR)/encrypt_file.py -o $(AUTH_SECTION_ENC) $(AUTH_SECTION_RAW)
+	@echo " OBJCOPY update .auth"
+	@$(OBJCOPY) --update-section .auth=$(AUTH_SECTION_ENC) $@
 
 $(BLD_DIR)/%.bin: $(BLD_DIR)/%.elf
 	@echo "  OBJCOPY $(notdir $@)"
@@ -195,6 +206,8 @@ clean:
 	rm -f $(OBJ_DIR)/*.a
 	rm -f $(OBJ_DIR)/*.su
 	rm -f $(OBJ_DIR)/*.d
+	rm -f $(BLD_DIR)/auth_section.bin
+	rm -f $(BLD_DIR)/auth_section_enc.bin
 
 linkTouch:
 	touch $(SRC_DIR)/vectors_auth.s

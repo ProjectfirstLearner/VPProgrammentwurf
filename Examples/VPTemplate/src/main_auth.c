@@ -422,13 +422,7 @@ static int32_t ProcessAuthDecryption(uint8_t* pData, uint32_t dataLength, const 
 {
 	if ((pData == NULL) || (pKey == NULL)) return ERROR_GENERAL;
 
-#ifdef ENABLE_ENCRYPTION
 	return DecryptAuthSection(pData, dataLength, pKey, keyLength);
-#else
-	(void)dataLength;
-	(void)keyLength;
-	return ERROR_OK;
-#endif
 }
 
 /**

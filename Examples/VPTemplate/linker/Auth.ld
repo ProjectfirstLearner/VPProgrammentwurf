@@ -45,7 +45,6 @@ MEMORY
 /* Symbols used for memory management
  * This includes the stack and also a possible heap memory
  */
-_size_of_stack = 0x200;                             /* Size of stack in bytes */
 _size_of_heap  = 0x0;                               /* Size of heap in bytes */
 
 /* Highest usable address of the RAM. */
@@ -149,8 +148,6 @@ SECTIONS
  	. = ALIGN(4);
  	_eauth_ram = .;
   } >RAM
-  
-  _auth_size = SIZEOF(.auth);
 
   .heap (NOLOAD):
   {
@@ -162,20 +159,6 @@ SECTIONS
     . = ALIGN(4);
 
      _end_of_heap = .;
-  } >RAM
-  
-  .stack (NOLOAD):
-  {
-    . = ALIGN(4);
-
-     _end_of_stack = .;
-    . += _size_of_stack;
-    
-    . = ALIGN(4);
-    
-    _start_of_stack = .;
-
-
   } >RAM
 
   /* Remove information from the standard libraries */
