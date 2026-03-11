@@ -39,7 +39,7 @@ MEMORY
   /* Stack Memory Region */
   STACK  (rw)	   : ORIGIN = 0x20013000,  LENGTH = 4K
   /* FLASH Memory Region using mapped address 0x08010000. */
-  FLASH  (rx)      : ORIGIN = 0x08000000,  LENGTH = 128K
+  FLASH  (rx)      : ORIGIN = 0x08010000,  LENGTH = 128K
 }
 
 /***** GLOBAL SYMBOLS ********************************************************/
@@ -69,9 +69,10 @@ SECTIONS
 
 
   /* Section for Interrupt Vector Table */
-  .isr_vector :
+  .isr_vector ALIGN(0x200):
   {
     . = ALIGN(4);
+    _isr_vector = .;
     /* Include the .isr_vector section which must include the vector interrupt table */
     KEEP(*(.isr_vector))
     . = ALIGN(4);
