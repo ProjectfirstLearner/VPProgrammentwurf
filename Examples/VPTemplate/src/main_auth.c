@@ -42,7 +42,7 @@
 
 #define UART_RX_BYTE_COUNT				1u
 #define UART_TRIGGER_CHAR				'A'
-#define UART_KEY_TERMINATOR				'\n'
+#define UART_KEY_TERMINATOR				'\r'
 #define UART_KEY_MAX_LENGTH				8u
 
 // INITIALIZATION FLAGS
@@ -273,8 +273,6 @@ static void HandlePreAppState()
  */
 static void HandleAppStartState()
 {
-	ledSetLED(LED2, GPIO_PIN_SET);
-
 	if(ExecuteVerifyFromRam() != ERROR_OK)
 	{
 		EnterFailureState();
@@ -291,7 +289,6 @@ static void HandleFailureState()
 {
 	ledSetLED(LED0, GPIO_PIN_RESET);
 	ledSetLED(LED1, GPIO_PIN_RESET);
-	ledSetLED(LED2, GPIO_PIN_RESET);
 	ledSetLED(LED4, GPIO_PIN_SET);
 }
 
@@ -362,8 +359,6 @@ static void HandlePreAppReceiveKey()
 static void HandlePreAppKeyReady()
 {
 	uint32_t authSize = (uint32_t)(_eauth_flash - _sauth_flash);
-
-	ledSetLED(LED3, GPIO_PIN_SET);
 
 	if(CopyAuthSectionToRam() != ERROR_OK)
 	{
@@ -463,6 +458,7 @@ static void KeyRxProcess(KeyRxContext_t* pContext)
 
 		receiveStatus = uartReceiveData(&ch, UART_RX_BYTE_COUNT);
 
+
 		if(receiveStatus != UART_ERR_OK) break;
 
 		if(ch == UART_KEY_TERMINATOR)
@@ -519,9 +515,9 @@ static int32_t ExecuteVerifyFromRam()
 	uint32_t verifyAddress = 0u;
 	AuthFunction_t verifyFunction = (AuthFunction_t)0;
 
-	if(_sauth_ram >= _eauth_ram) return ERROR_GENERAL;
+	if(&_sauth_ram[0] >= &_eauth_ram[0]) return ERROR_GENERAL;
 
-	verifyAddress = (uint32_t)_sauth_ram;
+	verifyAddress = (uint32_t)&_sauth_ram[0];
 
 	verifyFunction = (AuthFunction_t)verifyAddress;
 	verifyFunction();

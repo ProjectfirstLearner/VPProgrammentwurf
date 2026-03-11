@@ -63,13 +63,8 @@ SECTIONS
   .signature :
   {
   	. = ALIGN(4);
-  	_ssignature = .;
-  	
   	KEEP(*(.signature))
-  	KEEP(*(.signature*))
-  	
   	. = ALIGN(4);
-  	_esignature = .;
   } >FLASH
 
 

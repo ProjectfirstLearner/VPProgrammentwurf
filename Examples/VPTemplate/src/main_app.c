@@ -38,7 +38,7 @@
 #include "GasSensor.h"
 
 /***** PRIVATE CONSTANTS *****************************************************/
-
+const char signature[] __attribute__ ((section (".signature"))) = "UMMS";
 
 /***** PRIVATE MACROS ********************************************************/
 
