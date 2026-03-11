@@ -185,14 +185,14 @@ $(BLD_DIR)/app.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_APP) $(APP_OBJS_C) | $(APP_
 	@echo "  LD      $(notdir $@)"
 	@$(LD) $^ $(LDFLAGS) $(INC) -T$(APP_LD_FILE) -Wl,-Map $(BLD_DIR)/app.map -o $@
 
-$(BLD_DIR)/auth.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_AUTH) $(AUTH_OBJS_C) $(SCRIPT_DIR)/encrypt_file.py | $(AUTH_LD_FILE)
+$(BLD_DIR)/auth.elf: $(OBJ_DIR)/libstm32.a $(OBJS_ASM_AUTH) $(AUTH_OBJS_C) | $(AUTH_LD_FILE) $(SCRIPT_DIR)/encrypt_file.py
 	@echo "  LD      $(notdir $@)"
-	@$(LD) $^ $(LDFLAGS) $(INC) -T$(AUTH_LD_FILE) -Wl,-Map $(BLD_DIR)/auth.map -o $@
-	@echo " OBJCOPY dump .auth"
+	@$(LD) $(OBJ_DIR)/libstm32.a $(OBJS_ASM_AUTH) $(AUTH_OBJS_C) $(LDFLAGS) -T$(AUTH_LD_FILE) -Wl,-Map $(BLD_DIR)/auth.map -o $@
+	@echo "  OBJCOPY dump .auth"
 	@$(OBJCOPY) --dump-section .auth=$(AUTH_SECTION_RAW) $@
-	@echo " PYTHON encrypt .auth"
+	@echo "  PYTHON encrypt .auth"
 	@$(PYTHON) $(SCRIPT_DIR)/encrypt_file.py -o $(AUTH_SECTION_ENC) $(AUTH_SECTION_RAW)
-	@echo " OBJCOPY update .auth"
+	@echo "  OBJCOPY update .auth"
 	@$(OBJCOPY) --update-section .auth=$(AUTH_SECTION_ENC) $@
 
 $(BLD_DIR)/%.bin: $(BLD_DIR)/%.elf

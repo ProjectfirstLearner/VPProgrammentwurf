@@ -71,27 +71,6 @@ Reset_Handler:
     cmp r2, r4
     bcc .fillZerobss
 
-    /*  fill the stack segment. */
-    ldr r2, =_start_of_stack
-    ldr r4, =_end_of_stack
-    ldr r3, =Marker
-    ldr r3, [r3]
-    b .loopFillStack
-    
-
-.fillStack:
-    str  r3, [r2]
-    sub r2, r2, #4
-
-.loopFillStack:
-    cmp r2, r4
-    bne .fillStack
-	
-	ldr r3, =EndMarker
-	ldr r3, [r3]
-	str r3, [r2]
-	
-
     /* Initialize the Stack-Pointer */
     /* Load address of initial_stack_pointer into R0 for. Symbol defined in Linker Script */
     ldr r0, =_initial_stack_pointer

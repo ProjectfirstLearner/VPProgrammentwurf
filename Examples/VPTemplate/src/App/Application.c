@@ -31,9 +31,6 @@
 /******************************GlobalObjects***********************************/
 
 
-GasSensor gGasSensor1;
-GasSensor gGasSensor2;
-
 /***** PRIVATE PROTOTYPES ****************************************************/
 
 //defining functions that should be executing when in according state

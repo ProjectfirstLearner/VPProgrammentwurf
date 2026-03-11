@@ -65,10 +65,8 @@ SECTIONS
   	. = ALIGN(4);
   	_ssignature = .;
   	
-  	BYTE('U')
-  	BYTE('M')
-  	BYTE('M')
-  	BYTE('S')
+  	KEEP(*(.signature))
+  	KEEP(*(.signature*))
   	
   	. = ALIGN(4);
   	_esignature = .;
