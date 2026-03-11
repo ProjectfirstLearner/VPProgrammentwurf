@@ -35,7 +35,7 @@
 #include "GlobalObjects.h"
 #include "AppTasks.h"//including tasks
 #include "App/Application.h"
-#include "App/GasSensor.h"
+#include "GasSensor.h"
 
 /***** PRIVATE CONSTANTS *****************************************************/
 
@@ -63,6 +63,7 @@ static Scheduler gScheduler;            // Global Scheduler instance
 int main(void)
 {
 
+	//
 	__HAL_RCC_AHB1_FORCE_RESET();
 	__HAL_RCC_AHB1_RELEASE_RESET();
 
@@ -78,8 +79,6 @@ int main(void)
     // Initialize Scheduler
     schedInitialize(&gScheduler);
 
-    gasSensorInitialize(&gGasSensor1, 204U);
-    gasSensorInitialize(&gGasSensor2, 204U);
 
 
     //init for state table
@@ -101,8 +100,6 @@ int main(void)
     }
 
 
-    int globalCounter = 0;
-    uint8_t left = 0;
 
     //test Programm
     /*
