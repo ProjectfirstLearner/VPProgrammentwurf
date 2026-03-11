@@ -503,7 +503,8 @@ void verify(void)
 
 	__disable_irq();
 
-	ApplicationFunction_t applicationStart = (ApplicationFunction_t)(APPLICATION_START_ADDRESS | 0x1u);
+	uint32_t *applicationStartAddress = (uint32_t*)(APPLICATION_START_ADDRESS);
+	ApplicationFunction_t applicationStart = (ApplicationFunction_t)*(applicationStartAddress);
 
 	applicationStart();
 }

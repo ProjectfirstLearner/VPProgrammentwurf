@@ -97,7 +97,6 @@ int main(void)
 
     while(1){
     	schedCycle(&gScheduler);//calling scheduler
-
     }
 
 
