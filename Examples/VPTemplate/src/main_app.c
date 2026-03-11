@@ -65,8 +65,9 @@ static Scheduler gScheduler;            // Global Scheduler instance
  */
 int main(void)
 {
+	__enable_irq();
+	HAL_DeInit();
 
-	//
 	__HAL_RCC_AHB1_FORCE_RESET();
 	__HAL_RCC_AHB1_RELEASE_RESET();
 
