@@ -16,7 +16,7 @@
 #define _BUTTON_MODULE_H_
 
 /***** INCLUDES **************************************************************/
-
+#include <stdint.h>
 
 /***** CONSTANTS *************************************************************/
 
@@ -56,6 +56,8 @@ typedef enum _Button_Status_t
  * @return Returns BUTTON_ERR_OK if no error occured
  */
 int32_t buttonInitialize();
+
+void buttonCyclic10ms();
 
 /**
  * @brief Reads the input status of the button
