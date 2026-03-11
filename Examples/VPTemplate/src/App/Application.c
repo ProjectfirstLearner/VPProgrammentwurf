@@ -26,10 +26,11 @@
 #include "LEDModule.h"
 
 #include "Util/StateTable/StateTable.h" //state table
-#include "GasSensor.h"
+#include "DualChannelGasSensor.h"
 
 /******************************GlobalObjects***********************************/
 
+static StateTable_t gStateTable;
 
 /***** PRIVATE PROTOTYPES ****************************************************/
 
@@ -81,8 +82,6 @@ static StateTableEntry_t gStateTableEntries[] =
     {STATE_ID_TEST_MODE,       STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL}
 };
 
-//global state table instance
-static StateTable_t gStateTable;
 
 
 /***** PUBLIC FUNCTIONS ******************************************************/
@@ -91,6 +90,12 @@ static StateTable_t gStateTable;
 
 int32_t applicationInitialize(void)
 {
+
+
+
+	DualChannelInit();
+
+
     gStateTable.pStateList = gStateList;														//adding states to global instance
     gStateTable.stateCount = sizeof(gStateList) / sizeof(gStateList[0]);						//
 
@@ -99,7 +104,7 @@ int32_t applicationInitialize(void)
                                 gStateTableEntries,
                                 sizeof(gStateTableEntries) / sizeof(gStateTableEntries[0]),		//using size of arrays so that when adding the calc still works
 																								//exmpl. when checking for valid state switch, iterating till statecount works
-                                STATE_ID_INITIALIZATION);										//starting state
+                                STATE_ID_INITIALIZATION);									//starting state
 }
 
 int32_t applicationRun(void)

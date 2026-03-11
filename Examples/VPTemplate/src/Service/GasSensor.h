@@ -8,6 +8,7 @@
 #define _GAS_SENSOR_H_
 
 #include <stdint.h>
+#include "Filter/Filter.h"
 
 /***** MACROS ****************************************************************/
 #define SENSOR_OK               0u
@@ -25,8 +26,8 @@ typedef struct
 //initializing
 int32_t gasSensorInitialize(GasSensor* pSensor);
 //checking if in valid area, also filters
-int32_t gasSensorSetSensorVoltage(GasSensor* pSensor, uint32_t sensorVoltage);
+int32_t gasSensorSetSensorVoltage(GasSensor* pSensor,EMAFilterData_t* pEMA, uint32_t sensorVoltage);
 //getter for sensor data in ppm
-int32_t gasSensorGetSensorValue(GasSensor* pSensor);
+int32_t gasSensorGetSensorValue(GasSensor* pSensor, uint32_t *value);
 
 #endif

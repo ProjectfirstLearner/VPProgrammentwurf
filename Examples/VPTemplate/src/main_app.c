@@ -36,6 +36,9 @@
 #include "AppTasks.h"//including tasks
 #include "App/Application.h"
 #include "GasSensor.h"
+#include "Util/Filter/Filter.h"
+
+
 
 /***** PRIVATE CONSTANTS *****************************************************/
 
@@ -73,12 +76,12 @@ int main(void)
     // Initialize the System Clock
     SystemClock_Config();
 
+
     // Initialize Peripherals
     initializePeripherals();
 
     // Initialize Scheduler
     schedInitialize(&gScheduler);
-
 
 
     //init for state table

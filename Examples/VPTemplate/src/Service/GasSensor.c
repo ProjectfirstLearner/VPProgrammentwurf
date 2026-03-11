@@ -6,6 +6,7 @@
  */
 #include "GasSensor.h"
 #include "stddef.h"
+
 // in ppm
 #define MIN_SENSOR_VALUE        200
 #define MAX_SENSOR_VALUE        10000
@@ -14,6 +15,8 @@
 #define MAX_SENSOR_VOLTAGE      2500000U
 
 #define CONVERSION_FACTOR		204u
+
+
 
 
 int32_t gasSensorInitialize(GasSensor* pSensor)
@@ -29,7 +32,7 @@ int32_t gasSensorInitialize(GasSensor* pSensor)
 }
 
 //sensorVoltage is in micro
-int32_t gasSensorSetSensorVoltage(GasSensor* pSensor, uint32_t sensorVoltage)
+int32_t gasSensorSetSensorVoltage(GasSensor* pSensor, EMAFilterData_t* pEMA, uint32_t sensorVoltage)
 {
 	//cheink if pointer is on GasSensor, if not, invalid
     if (pSensor == NULL) return SENSOR_INVALID_PTR;
@@ -38,18 +41,22 @@ int32_t gasSensorSetSensorVoltage(GasSensor* pSensor, uint32_t sensorVoltage)
 
     if (sensorVoltage < MIN_SENSOR_VOLTAGE || sensorVoltage >MAX_SENSOR_VOLTAGE) return SENSOR_VOLTAGE_INVALID;
 
-    //!!!!!!!!!FilterEMA here
+    int32_t filtered = filterEMA(pEMA, sensorVoltage);
 
     pSensor->sensorVoltage = sensorVoltage;
 
     return SENSOR_OK;
 }
 
-int32_t gasSensorGetSensorValue(GasSensor* pSensor)
+int32_t gasSensorGetSensorValue(GasSensor* pSensor, uint32_t *gasvalue)
 {
 
 	int32_t differenceVoltage = 0u;
-	int32_t value = 0u;
+
+	if (gasvalue == NULL)
+	    {
+	        return SENSOR_INVALID_PTR;
+	    }
 
     if (pSensor == NULL)
     {
@@ -62,15 +69,17 @@ int32_t gasSensorGetSensorValue(GasSensor* pSensor)
     //using MIN_SENSOR_VOLTAGE as Offset
     differenceVoltage = pSensor->sensorVoltage - MIN_SENSOR_VOLTAGE;
 
-    value = MIN_SENSOR_VALUE + (int32_t)(differenceVoltage / CONVERSION_FACTOR);
+    *gasvalue = MIN_SENSOR_VALUE + (int32_t)(differenceVoltage / CONVERSION_FACTOR);
 
     //same here but for ppm
-    if ((value < MIN_SENSOR_VALUE) || (value > MAX_SENSOR_VALUE))
+    if ((*gasvalue < MIN_SENSOR_VALUE) || (*gasvalue > MAX_SENSOR_VALUE))
     {
         return SENSOR_VALUE_INVALID;
     }
 
-    return value;
+
+
+    return SENSOR_OK;
 }
 
 

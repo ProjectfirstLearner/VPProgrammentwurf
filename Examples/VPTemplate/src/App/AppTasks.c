@@ -24,6 +24,9 @@
 #include "Util/Log/printf.h"
 #include "Util/Log/LogOutput.h"
 
+#include "DualChannelGasSensor.h"
+
+
 /*temporary*/
 
 #include <stdint.h>
@@ -54,13 +57,15 @@
 #define APP_ADC_MAX_VALUE       4095U
 #define APP_ADC_REFERENCE_UV    3300000U
 
-GasSensor gGasSensor1;
 
 /***** PUBLIC FUNCTIONS ******************************************************/
 
+
+
+
 void taskApp10ms()
 {
-
+	DualChannelSetVoltage();
 }
 
 
@@ -73,13 +78,6 @@ void taskApp250ms()
 {
 
 
-	int32_t adcValue = adcReadChannel(ADC_INPUT0);
-	int32_t sensorVoltageCheck = gasSensorSetSensorVoltage(&gGasSensor1, adcValue);
-    int32_t gasValue1 = gasSensorGetSensorValue(&gGasSensor1);
-
-    outputLogf("Gas1Voltage: %ld  Gas1ppm: %ld\n\r", adcValue, gasValue1);
-
-    //gasValue1 = gasSensorGetSensorValue(&gGasSensor1);
 
 }
 

@@ -13,9 +13,12 @@
  *
  *****************************************************************************/
 
- /***** INCLUDES **************************************************************/
+/***** INCLUDES **************************************************************/
 #include "Filter.h"
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
 /***** PRIVATE CONSTANTS *****************************************************/
 
 
@@ -35,15 +38,70 @@
 
 int32_t filterInitEMA(EMAFilterData_t* pEMA, int32_t scalingFactor, int32_t alpha, bool resetFilter)
 {
-    return 0;
+    if (pEMA == NULL)
+    {
+        return FILTER_ERR_INVALID_PTR;
+    }
+
+    if ((scalingFactor <= 0) || (alpha <= 0) || (alpha > scalingFactor))
+    {
+        return FILTER_ERR_INVALID_PARAM;
+    }
+
+    pEMA->scalingFactor = scalingFactor;
+    pEMA->alpha = alpha;
+
+    if (resetFilter == true)
+    {
+        pEMA->firstValueAvailable = false;
+        pEMA->previousValue = 0;
+    }
+
+    return FILTER_ERR_OK;
 }
 
 int32_t filterResetEMA(EMAFilterData_t* pEMA)
 {
-    return 0;
+    if (pEMA == NULL)
+    {
+        return FILTER_ERR_INVALID_PTR;
+    }
+
+    pEMA->firstValueAvailable = false;
+    pEMA->previousValue = 0;
+
+    return FILTER_ERR_OK;
 }
 
 int32_t filterEMA(EMAFilterData_t* pEMA, int32_t sensorValue)
 {
-    return 0;
+    int32_t filteredValue = 0;
+    int64_t weightedNewValue = 0;
+    int64_t weightedOldValue = 0;
+
+    if (pEMA == NULL)
+    {
+        return FILTER_ERR_INVALID_PTR;
+    }
+
+    if ((pEMA->scalingFactor <= 0) || (pEMA->alpha <= 0) || (pEMA->alpha > pEMA->scalingFactor))
+    {
+        return FILTER_ERR_INVALID_PARAM;
+    }
+
+    if (pEMA->firstValueAvailable == false)
+    {
+        pEMA->previousValue = sensorValue;
+        pEMA->firstValueAvailable = true;
+        return FILTER_ERR_OK;
+    }
+
+    weightedNewValue = (int64_t)pEMA->alpha * (int64_t)sensorValue;
+    weightedOldValue = (int64_t)(pEMA->scalingFactor - pEMA->alpha) * (int64_t)pEMA->previousValue;
+
+    filteredValue = (int32_t)((weightedNewValue + weightedOldValue) / pEMA->scalingFactor);
+
+    pEMA->previousValue = filteredValue;
+
+    return FILTER_ERR_OK;
 }
