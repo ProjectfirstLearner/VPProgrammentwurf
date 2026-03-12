@@ -1,9 +1,10 @@
 /*
- * GasSensor.h
+ * WaterSensor.h
  *
  *  Created on: Mar 11, 2026
  *      Author: kali
  */
+
 #ifndef _WATER_SENSOR_H_
 #define _WATER_SENSOR_H_
 
@@ -21,11 +22,30 @@ typedef struct
 } WaterSensor;
 
 /***** PROTOTYPES ************************************************************/
-//initializing
-int32_t WaterSensorInitialize();
-//checking if in valid area, also filters
+
+/**
+ * @brief Initializes the water sensor module.
+ *
+ * @return SENSOR_OK
+ */
+int32_t WaterSensorInitialize(void);
+
+/**
+ * @brief Sets the sensor voltage if it is within the valid range.
+ *
+ * @param sensorVoltage Sensor voltage in microvolts.
+ *
+ * @return SENSOR_OK on success, SENSOR_VOLTAGE_INVALID on invalid voltage
+ */
 int32_t WaterSensorSetSensorVoltage(uint32_t sensorVoltage);
-//getter for sensor data in ppm
+
+/**
+ * @brief Returns the calculated sensor value.
+ *
+ * @param value Pointer to output value.
+ *
+ * @return SENSOR_OK on success, error code otherwise
+ */
 int32_t WaterSensorGetSensorValue(uint32_t *value);
 
 #endif

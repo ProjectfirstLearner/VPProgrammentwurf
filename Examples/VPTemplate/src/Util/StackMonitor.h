@@ -19,8 +19,8 @@
 #define STACK_MONITOR_H_
 
 /***** INCLUDES **************************************************************/
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /***** PUBLIC FUNCTION PROTOTYPES ********************************************/
 

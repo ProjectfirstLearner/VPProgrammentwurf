@@ -23,10 +23,6 @@
 /***** INCLUDES **************************************************************/
 #include "StackMonitor.h"
 #include "stm32g4xx.h"
-#include <stdbool.h>
-
-#include <stddef.h>
-#include <stdint.h>
 
 /***** PRIVATE CONSTANTS *****************************************************/
 

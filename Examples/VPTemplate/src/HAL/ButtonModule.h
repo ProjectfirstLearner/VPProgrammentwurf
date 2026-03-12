@@ -22,8 +22,7 @@
 
 
 /***** MACROS ****************************************************************/
-#define BUTTON_ERR_OK      0            //!< No error occured
-
+#define BUTTON_ERR_OK      0            /* No error occured */
 
 /***** TYPES *****************************************************************/
 
@@ -33,41 +32,42 @@
  */
 typedef enum _Button_t
 {
-    BTN_SW1,
-    BTN_SW2,
-    BTN_B1
+    BTN_SW1,		/* Switch SW1	*/
+    BTN_SW2,		/* Switch SW2	*/
+    BTN_B1			/* Button B1	*/
 } Button_t;
 
 /**
- * @brief Enumeration for possible Button states
+ * @brief Enumeration for possible button states
  *
  */
 typedef enum _Button_Status_t
 {
-    BUTTON_PRESSED,                     //!< Button is pressed
-    BUTTON_RELEASED                     //!< Button is released
+    BUTTON_PRESSED,			/* Button is pressed  */
+    BUTTON_RELEASED			/* Button is released */
 } Button_Status_t;
 
 /***** PROTOTYPES ************************************************************/
 
 /**
- * @brief Initialize the GPIOs for the Button inputs
+ * @brief Initializes the GPIOs for the button inputs
  *
- * @return Returns BUTTON_ERR_OK if no error occured
+ * @return Returns BUTTON_ERR_OK if no error occurred
  */
-int32_t buttonInitialize();
-
-void buttonCyclic10ms();
+int32_t buttonInitialize(void);
 
 /**
- * @brief Reads the input status of the button
+ * @brief Processes the 10 ms debounce logic for all buttons
+ *
+ */
+void buttonCyclic10ms(void);
+
+/**
+ * @brief Returns the debounced logical status of a button
  *
  * @param button Button to read the status from
  *
- * @returns Returns the button status (pressed or released)
- *
- * @remark This function doesn't do any debouncing. It just reads
- * the pure GPIO state
+ * @return Returns the debounced button status
  */
 Button_Status_t buttonGetButtonStatus(Button_t button);
 

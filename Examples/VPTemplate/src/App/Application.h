@@ -18,6 +18,7 @@
 /***** INCLUDES **************************************************************/
 #include <stdint.h>
 
+
 /***** CONSTANTS *************************************************************/
 
 
@@ -25,6 +26,11 @@
 
 
 /***** TYPES *****************************************************************/
+
+/**
+ * @brief Enumeration of application state IDs
+ *
+ */
 typedef enum
 {
     STATE_ID_INITIALIZATION = 0,
@@ -35,11 +41,15 @@ typedef enum
     STATE_ID_FAILURE
 } ApplicationStateID_t;
 
+/**
+ * @brief Enumeration of application event IDs
+ *
+ */
 typedef enum
 {
 	EVT_ID_NO_ID = 0,
-    EVT_ID_INIT_READY = 1,				/*starting at 1, becasue 0 is defined as "STT_NONE_EVENT",
-    										dodging a mislead event if stateTableSendEvent() sends 0*/
+    EVT_ID_INIT_READY = 1,				/* starting at 1, because 0 is defined as "STT_NONE_EVENT",
+    										avoiding a misleading event if stateTableSendEvent() sends 0 */
     EVT_ID_SENSOR_FAILED,
     EVT_ID_SWITCH_TO_OPERATIONAL,
     EVT_ID_SWITCH_TO_PRE_OPERATIONAL,
@@ -51,23 +61,63 @@ typedef enum
 
 /***** PROTOTYPES ************************************************************/
 
-//function to asign state list, transition table, and start state
+/**
+ * @brief Initializes application state list, transition table and start state
+ *
+ * @return Returns initialization result
+ */
 int32_t applicationInitialize(void);
 
-//gets called every 50ms
+/**
+ * @brief Runs the application state machine cyclically
+ *
+ * @return Returns state machine execution result
+ */
 int32_t applicationRun(void);
 
-//function used to send events to state machine
+/**
+ * @brief Sends an event to the application state machine
+ *
+ * @param eventID Event ID to send
+ *
+ * @return Returns result of event handling
+ */
 int32_t applicationSendEvent(int32_t eventID);
 
+/**
+ * @brief Handles gas sensor related application logic
+ *
+ * @return Returns function result
+ */
 int32_t AppGasSensorHandler(void);
 
-int32_t applicationGetCurrentState();
+/**
+ * @brief Returns current active application state
+ *
+ * @return Returns current state ID or error value
+ */
+int32_t applicationGetCurrentState(void);
 
-int32_t emergencyBlicking();
+/**
+ * @brief Handles emergency blinking indication
+ *
+ * @return Returns function result
+ */
+int32_t emergencyBlicking(void);
 
-int32_t waterSensorHandler();
+/**
+ * @brief Handles water sensor related logic
+ *
+ * @return Returns function result
+ */
+int32_t waterSensorHandler(void);
 
-int32_t toggleDashSymbol();
+/**
+ * @brief Toggles dash symbol on display
+ *
+ * @return Returns current state ID or error value
+ */
+int32_t toggleDashSymbol(void);
+
 
 #endif

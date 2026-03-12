@@ -29,24 +29,23 @@
 /***** TYPES *****************************************************************/
 
 /**
- * @brief Function pointer for reading the current HAL Tick timer
+ * @brief Function pointer for reading the current HAL tick timer
  *
- * This provides the possibility to decouple the scheduler from a
- * specific HAL implementation, but still makes it possible to measure
- * the time inside the scheduler.
+ * @details This provides the possibility to decouple the scheduler from a
+ *          specific HAL implementation, but still makes it possible to
+ *          measure time inside the scheduler.
  *
  */
 typedef uint32_t (*GetHALTick)(void);
 
 /**
- * @brief Function pointer for cyclic function for the scheduler
+ * @brief Function pointer for cyclic scheduler task functions
  *
  */
 typedef void (*CyclicFunction)(void);
 
 /**
- * @brief Struct definition which holds the HAL tick
- * time stamps for the different tasks
+ * @brief Scheduler object holding callback functions and task timestamps
  *
  */
 typedef struct _Scheduler
@@ -67,29 +66,29 @@ typedef struct _Scheduler
 
 /***** PROTOTYPES ************************************************************/
 
-
 /**
- * @brief Initializes the Scheduler component
- * Initializes the internal values for the timestamps.
+ * @brief Initializes the scheduler component
  *
- * @remark: This function doesn't initialize the function
- * pointers in the Scheduler struct!
+ * @details Initializes the internal timestamp values of the scheduler.
+ *
+ * @remark This function does not initialize the function pointers in the
+ *         scheduler struct.
  *
  * @param pScheduler Pointer to scheduler struct
  *
- * @return SCHED_ERR_OK if no error occured
+ * @return Returns SCHED_ERR_OK if no error occurred
  */
 int32_t schedInitialize(Scheduler* pScheduler);
 
 /**
  * @brief Cyclic function for the scheduler
- * This function should be called in the super loop of the system
- * Hereby the scheduler takes care of the different time slots for
- * the tasks
+ *
+ * @details This function should be called in the system super loop. The
+ *          scheduler takes care of the different task time slots.
  *
  * @param pScheduler Pointer to scheduler struct
  *
- * @return SCHED_ERR_OK if no error occured
+ * @return Returns SCHED_ERR_OK if no error occurred
  */
 int32_t schedCycle(Scheduler* pScheduler);
 

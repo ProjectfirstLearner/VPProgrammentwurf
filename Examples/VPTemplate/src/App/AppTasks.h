@@ -30,8 +30,23 @@
 
 /***** PROTOTYPES ************************************************************/
 
+/**
+ * @brief 10 ms application task
+ *
+ */
 void taskApp10ms();
+
+/**
+ * @brief 50 ms application task
+ *
+ */
 void taskApp50ms();
+
+/**
+ * @brief 250 ms application task
+ *
+ */
 void taskApp250ms();
+
 
 #endif /* SRC_APP_APPTASKS_H_ */

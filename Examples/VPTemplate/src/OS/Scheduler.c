@@ -28,8 +28,9 @@
 
 
 /***** INCLUDES **************************************************************/
-#include "Scheduler.h"
 #include <stddef.h>
+
+#include "Scheduler.h"
 
 /***** PRIVATE CONSTANTS *****************************************************/
 
@@ -37,56 +38,29 @@
 /***** PRIVATE MACROS ********************************************************/
 
 
-/** @brief Number of HAL ticks corresponding to 10 ms. */
+/** @brief Number of HAL ticks corresponding to 10, 50, 250 ms. */
 #define HAL_TICK_VALUE_10MS     10U
-
-/** @brief Number of HAL ticks corresponding to 50 ms. */
 #define HAL_TICK_VALUE_50MS     50U
-
-/** @brief Number of HAL ticks corresponding to 250 ms. */
 #define HAL_TICK_VALUE_250MS    250U
 
 /***** PRIVATE TYPES *********************************************************/
 
 
 /***** PRIVATE PROTOTYPES ****************************************************/
+static inline uint32_t schedulerGetElapseTime(uint32_t savedTimeStamp, uint32_t currentTime);
 
 
 /***** PRIVATE VARIABLES *****************************************************/
 
-/**
- * @brief Calculates the elapsed time between two HAL tick values.
- *
- * @details
- * The calculation is based on unsigned subtraction and therefore also works
- * correctly when the HAL tick counter wraps around.
- *
- * @param[in] savedTimeStamp
- * Previously stored tick value.
- *
- * @param[in] currentTime
- * Current HAL tick value.
- *
- * @return Elapsed time in ticks.
- */
-static uint32_t schedulerGetElapseTime(uint32_t savedTimeStamp, uint32_t currentTime);
 
 /***** PUBLIC FUNCTIONS ******************************************************/
 
 /**
- * @brief Initializes the scheduler instance.
+ * @brief Initializes the scheduler instance
  *
- * @details
- * Resets all internal timestamp values of the scheduler.
+ * @param pScheduler Pointer to scheduler instance
  *
- * @param[in,out] pScheduler
- * Pointer to the scheduler instance to initialize.
- *
- * @retval SCHED_ERR_OK
- * Scheduler was initialized successfully.
- *
- * @retval SCHED_ERR_INVALID_PTR
- * `pScheduler` is `NULL`.
+ * @return Returns SCHED_ERR_OK if no error occurred
  */
 int32_t schedInitialize(Scheduler* pScheduler)
 {
@@ -105,37 +79,18 @@ int32_t schedInitialize(Scheduler* pScheduler)
 	pScheduler->pTask_50ms = NULL;
 	pScheduler->pTask_250ms = NULL;
 
-
-
     return SCHED_ERR_OK;
 }
 
-
 /**
- * @brief Executes one scheduler cycle.
+ * @brief Executes one scheduler cycle
  *
- * @details
- * Checks all configured scheduler time slots and executes the corresponding
- * task function if the required period has elapsed since the last execution.
+ * @param pScheduler Pointer to scheduler instance
  *
- * The following cyclic tasks are supported:
- * - 10 ms task
- * - 50 ms task
- * - 250 ms task
- *
- * @param[in,out] pScheduler
- * Pointer to the scheduler instance.
- *
- * @retval SCHED_ERR_OK
- * Scheduler cycle completed successfully.
- *
- * @retval SCHED_ERR_INVALID_PTR
- * `pScheduler` is `NULL` or a required task pointer is `NULL`.
+ * @return Returns SCHED_ERR_OK if no error occurred
  */
 int32_t schedCycle(Scheduler* pScheduler)
 {
-
-
 	uint32_t timeElapsed = 0U;
 	uint32_t actualTick= 0U;
 
@@ -150,8 +105,8 @@ int32_t schedCycle(Scheduler* pScheduler)
 	    return SCHED_ERR_INVALID_PTR;
 	}
 
-
 	actualTick = pScheduler->pGetHALTick();
+
 	timeElapsed = schedulerGetElapseTime(pScheduler->halTick_10ms, actualTick);
 	if(timeElapsed >= HAL_TICK_VALUE_10MS)
 	{
@@ -194,7 +149,6 @@ int32_t schedCycle(Scheduler* pScheduler)
 		}
 	}
 
-
 	return SCHED_ERR_OK;
 }
 
@@ -202,20 +156,16 @@ int32_t schedCycle(Scheduler* pScheduler)
 /***** PRIVATE FUNCTIONS *****************************************************/
 
 /**
- * @brief Calculates elapsed scheduler time in HAL ticks.
+ * @brief Calculates elapsed scheduler time in HAL ticks
  *
- * @param[in] savedTimeStamp
- * Previously stored timestamp.
+ * @param savedTimeStamp Previously stored timestamp
+ * @param currentTime Current HAL tick value
  *
- * @param[in] currentTime
- * Current HAL tick value.
- *
- * @return Difference between current and saved timestamp in ticks.
+ * @return Returns difference between current and saved timestamp in ticks
  */
-
-//inline so that compiler dosnt jump but writes code directly
 static inline uint32_t schedulerGetElapseTime(uint32_t savedTimeStamp, uint32_t currentTime)
 {
 	uint32_t dt = currentTime - savedTimeStamp;
+
 	return dt;
 }

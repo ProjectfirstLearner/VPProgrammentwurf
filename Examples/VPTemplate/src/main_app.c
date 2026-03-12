@@ -16,8 +16,8 @@
 
 /***** INCLUDES **************************************************************/
 #include "stm32g4xx_hal.h"
-#include "System.h"
 
+#include "System.h"
 #include "HardwareConfig.h"
 
 #include "Util/Global.h"
@@ -33,12 +33,10 @@
 #include "Scheduler.h"
 
 #include "GlobalObjects.h"
-#include "AppTasks.h"//including tasks
+#include "AppTasks.h"
 #include "App/Application.h"
 #include "GasSensor.h"
 #include "Util/Filter/Filter.h"
-
-
 
 /***** PRIVATE CONSTANTS *****************************************************/
 const char signature[] __attribute__ ((section (".signature"))) = "UMMS";
@@ -50,18 +48,21 @@ const char signature[] __attribute__ ((section (".signature"))) = "UMMS";
 
 
 /***** PRIVATE PROTOTYPES ****************************************************/
-static int32_t initializePeripherals();
+static int32_t initializePeripherals(void);
 
 
 /***** PRIVATE VARIABLES *****************************************************/
-static Scheduler gScheduler;            // Global Scheduler instance
+
+/* Global scheduler instance */
+static Scheduler gScheduler;
 
 
 /***** PUBLIC FUNCTIONS ******************************************************/
 
-
 /**
- * @brief Main function of System
+ * @brief Main function of the application
+ *
+ * @return Never returns
  */
 int main(void)
 {
@@ -71,134 +72,57 @@ int main(void)
 	__HAL_RCC_AHB1_FORCE_RESET();
 	__HAL_RCC_AHB1_RELEASE_RESET();
 
-    // Initialize the HAL
+	/* Initialize HAL */
     HAL_Init();
 
-    // Initialize the System Clock
+    /* Initialize system clock */
     SystemClock_Config();
 
-
-    // Initialize Peripherals
+    /* Initialize peripherals */
     initializePeripherals();
 
-    // Initialize Scheduler
+    /* Initialize scheduler */
     schedInitialize(&gScheduler);
 
-
-    //init for state table
+    /* Initialize application state machine */
     applicationInitialize();
 
-    //giving the scheduler the actual time
+    /* Assign scheduler time base */
     gScheduler.pGetHALTick = HAL_GetTick;
 
-    //setting the time intervals
+    /* Assign scheduler task intervals */
     gScheduler.pTask_10ms = taskApp10ms;
     gScheduler.pTask_50ms = taskApp50ms;
     gScheduler.pTask_250ms = taskApp250ms;
 
-    while(1){
-    	schedCycle(&gScheduler);//calling scheduler
-    }
-
-
-
-    //test Programm
-    /*
-    while (1)
+    while(1)
     {
-
-
-        // Read to buttons
-        Button_Status_t but1 = buttonGetButtonStatus(BTN_SW1);
-        Button_Status_t but2 = buttonGetButtonStatus(BTN_SW2);
-        Button_Status_t but3 = buttonGetButtonStatus(BTN_B1);
-
-        // Read the POT1 input from ADC
-        int adcValue = adcReadChannel(ADC_INPUT0);
-
-        // If SW1 is pressed, print some debug message on the terminal
-        if (but1 == BUTTON_PRESSED)
-        {
-            // Toggle all LEDs to the their functionality (Toggle frequency depends on HAL_Delay at end of loop)
-            ledToggleLED(LED0);
-            HAL_Delay(25);
-            ledToggleLED(LED1);
-            HAL_Delay(25);
-            ledToggleLED(LED2);
-            HAL_Delay(25);
-            ledToggleLED(LED3);
-            HAL_Delay(25);
-            ledToggleLED(LED4);
-            HAL_Delay(25);
-        }
-
-        // If SW2 is pressed, print the ADC digit value on the terminal
-        if (but2 == BUTTON_PRESSED)
-        {
-        	HAL_GPIO_WritePin(BEEP_GPIO_PORT, BEEP_PIN, GPIO_PIN_RESET);
-        }
-        else
-        {
-        	HAL_GPIO_WritePin(BEEP_GPIO_PORT, BEEP_PIN, GPIO_PIN_SET);
-        }
-
-        if (but3 == BUTTON_PRESSED)
-        {
-        	outputLogf("ADC Val: %d\n\r", adcValue);
-        }
-
-        globalCounter++;
-        if (globalCounter > 99)
-        {
-            globalCounter = 0;
-        }
-
-        if (left == 1)
-        {
-            displayShowDigit(LEFT_DISPLAY, (globalCounter / 10));
-        }
-        else
-        {
-            displayShowDigit(RIGHT_DISPLAY, (globalCounter % 10));
-        }
-
-        left = !left;
-
-        // Remove this HAL_Delay as soon as there is a Scheduler used
-        HAL_Delay(25);
+    	schedCycle(&gScheduler);
     }
-    */
 }
 
 /***** PRIVATE FUNCTIONS *****************************************************/
 
 /**
- * @brief Initializes the used peripherals like GPIO,
- * ADC, DMA and Timer Interrupts
+ * @brief Initializes the used peripherals like GPIO, ADC, DMA and timer
  *
  * @return Returns ERROR_OK if no error occurred
  */
 static int32_t initializePeripherals()
 {
-
-
-
-    // Initialize UART used for Debug-Outputs
+	/* Initialize UART used for debug outputs */
     uartInitialize(115200);
 
-    // Initialize GPIOs for LED and 7-Segment output
+    /* Initialize GPIOs for LEDs and 7-segment display */
 	ledInitialize();
     displayInitialize();
 
-    // Initialize GPIOs for Buttons
+    /* Initialize GPIOs for buttons */
     buttonInitialize();
 
-    // Initialize Timer, DMA and ADC for sensor measurements
+    /* Initialize timer, DMA and ADC for sensor measurements */
     timerInitialize();
     adcInitialize();
-
-    schedInitialize(&gScheduler);
-    applicationInitialize();
 
     return ERROR_OK;
 }

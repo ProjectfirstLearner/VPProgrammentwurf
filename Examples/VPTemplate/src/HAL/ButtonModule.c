@@ -29,6 +29,11 @@
 
 
 /***** PRIVATE TYPES *********************************************************/
+
+/**
+ * @brief Internal debounce data of one button
+ *
+ */
 typedef struct
 {
 	Button_Status_t stableState;
@@ -40,11 +45,18 @@ typedef struct
 static Button_Status_t buttonGetRawButtonStatus(Button_t button);
 static uint32_t buttonToIndex(Button_t button);
 
+
 /***** PRIVATE VARIABLES *****************************************************/
 static ButtonDebounceData_t gButtonDebounce[BUTTON_COUNT];
 
+
 /***** PUBLIC FUNCTIONS ******************************************************/
 
+/**
+ * @brief Initializes GPIOs and debounce states for all buttons
+ *
+ * @return Returns BUTTON_ERR_OK if no error occurred
+ */
 int32_t buttonInitialize()
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -90,6 +102,11 @@ int32_t buttonInitialize()
 	return BUTTON_ERR_OK;
 }
 
+
+/**
+ * @brief Processes button debounce every 10 ms
+ *
+ */
 void buttonCyclic10ms()
 {
 	uint32_t index = 0u;
@@ -126,14 +143,30 @@ void buttonCyclic10ms()
 	}
 }
 
+/**
+ * @brief Returns the debounced logical button state
+ *
+ * @param button Button to read
+ *
+ * @return Returns debounced button state
+ */
 Button_Status_t buttonGetButtonStatus(Button_t button)
 {
 	uint32_t index = buttonToIndex(button);
 	return gButtonDebounce[index].stableState;
 }
 
+
 /***** PRIVATE FUNCTIONS *****************************************************/
 
+/**
+ * @brief Reads the raw GPIO state of a button and converts it to a logical
+ *        button state
+ *
+ * @param button Button to read
+ *
+ * @return Returns raw logical button state
+ */
 static Button_Status_t buttonGetRawButtonStatus(Button_t button)
 {
     GPIO_PinState gpioStatus = GPIO_PIN_RESET;
@@ -178,6 +211,13 @@ static Button_Status_t buttonGetRawButtonStatus(Button_t button)
     return buttonStatus;
 }
 
+/**
+ * @brief Converts a button enum value to debounce array index
+ *
+ * @param button Button to convert
+ *
+ * @return Returns matching debounce array index
+ */
 static uint32_t buttonToIndex(Button_t button)
 {
 	uint32_t index = 0u;

@@ -4,10 +4,12 @@
  *  Created on: Mar 11, 2026
  *      Author: kali
  */
+
 #ifndef _GAS_SENSOR_H_
 #define _GAS_SENSOR_H_
 
 #include <stdint.h>
+
 #include "Filter/Filter.h"
 
 /***** MACROS ****************************************************************/
@@ -23,11 +25,14 @@ typedef struct
 } GasSensor;
 
 /***** PROTOTYPES ************************************************************/
-//initializing
+
+/* Initializing */
 int32_t gasSensorInitialize(GasSensor* pSensor);
-//checking if in valid area, also filters
+
+/* Checking if in valid area, also filters */
 int32_t gasSensorSetSensorVoltage(GasSensor* pSensor,EMAFilterData_t* pEMA, uint32_t sensorVoltage);
-//getter for sensor data in ppm
+
+/* Getter for sensor data in ppm */
 int32_t gasSensorGetSensorValue(GasSensor* pSensor, uint32_t *value);
 
 #endif
