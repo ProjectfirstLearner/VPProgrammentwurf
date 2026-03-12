@@ -49,11 +49,15 @@
 #define MAX_WATER_VALUE				1000
 #define MAX_ACCEPTED_VALUE			999
 
+#define DASH_DIGIT					16
+
 
 static int32_t emergencyTimer = 0;
 static int32_t warningTimer = 0;
 static int32_t now = 0;
 static uint32_t elapsed = 0;
+
+int8_t displayToggle = 0;
 
 /******************************GlobalObjects***********************************/
 
@@ -179,6 +183,8 @@ static int32_t onStatePreOperational(State_t* pState, int32_t eventID)
     (void)pState;
     (void)eventID;
 
+    //toggleDashSymbol();
+
     return ERROR_OK;
 }
 
@@ -195,6 +201,7 @@ static int32_t onStateOperational(State_t* pState, int32_t eventID)
 {
     (void)pState;
     (void)eventID;
+
     return ERROR_OK;
 }
 
@@ -202,6 +209,8 @@ static int32_t onStateEmergency(State_t* pState, int32_t eventID)
 {
     (void)pState;
     (void)eventID;
+
+    //toggleDashSymbol();
 
     return ERROR_OK;
 }
@@ -228,7 +237,28 @@ static int32_t onStateFailure(State_t* pState, int32_t eventID)
 {
     (void)pState;
     (void)eventID;
+
+    //toggleDashSymbol();
+
     return ERROR_OK;
+}
+
+int32_t toggleDashSymbol()
+{
+	if(gStateTable.currentStateID == STATE_ID_OPERATIONAL) return CURRENT_STATE_ERROR;
+
+	if (displayToggle == 0)
+	{
+		displayShowDigit(LEFT_DISPLAY, DASH_DIGIT);
+		displayToggle = 1;
+	}
+	else
+	{
+		displayShowDigit(RIGHT_DISPLAY, DASH_DIGIT);
+		displayToggle = 0;
+	}
+
+	return gStateTable.currentStateID;
 }
 
 int32_t AppGasSensorHandler(void)

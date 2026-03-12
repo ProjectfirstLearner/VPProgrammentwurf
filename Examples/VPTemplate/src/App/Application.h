@@ -68,4 +68,6 @@ int32_t emergencyBlicking();
 
 int32_t waterSensorHandler();
 
+int32_t toggleDashSymbol();
+
 #endif
