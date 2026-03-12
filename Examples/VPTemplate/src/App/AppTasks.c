@@ -67,6 +67,8 @@ void taskApp10ms()
 {
 	buttonCyclic10ms();
 	DualChannelSetVoltage();
+
+	AppGasSensorHandler();
 }
 
 
