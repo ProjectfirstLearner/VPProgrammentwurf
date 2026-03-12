@@ -123,7 +123,6 @@ static StateTableEntry_t gStateTableEntries[] =
 
 int32_t applicationInitialize(void)
 {
-	DualChannelInit();
 
     gStateTable.pStateList = gStateList;														//adding states to global instance
     gStateTable.stateCount = sizeof(gStateList) / sizeof(gStateList[0]);						//
@@ -159,6 +158,16 @@ static int32_t onStateInitialization(State_t* pState, int32_t eventID)
 {
     (void)pState;
     (void)eventID;
+
+    DualChannelInit();
+
+    if (gasSensorHandler() == DUAL_SENSOR_ERROR)
+    {
+    	ledSetLED(LED4, LED_ON);
+    	applicationSendEvent(EVT_ID_SENSOR_FAILED);
+    	return ERROR_GENERAL;
+
+    }
 
     applicationSendEvent(EVT_ID_INIT_READY);
     return ERROR_OK;
@@ -228,7 +237,9 @@ static int32_t onStateTestMode(State_t* pState, int32_t eventID)
 
 static int32_t onEntryFailure(State_t* pState, int32_t eventID)
 {
+	ledSetLED(LED0, LED_OFF);
 	ledSetLED(LED2, LED_ON);
+
 
 	return ERROR_OK;
 }
