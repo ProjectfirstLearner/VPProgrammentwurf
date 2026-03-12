@@ -28,8 +28,8 @@
 typedef enum
 {
     STATE_ID_INITIALIZATION = 0,
-    STATE_ID_PRE_OPERATIONAL,
-    STATE_ID_OPERATIONAL,
+    STATE_ID_PRE_OPERATIONAL = 1,
+    STATE_ID_OPERATIONAL = 2,
     STATE_ID_EMERGENCY,
     STATE_ID_TEST_MODE,
     STATE_ID_FAILURE
@@ -37,6 +37,7 @@ typedef enum
 
 typedef enum
 {
+	EVT_ID_NO_ID = 0,
     EVT_ID_INIT_READY = 1,				/*starting at 1, becasue 0 is defined as "STT_NONE_EVENT",
     										dodging a mislead event if stateTableSendEvent() sends 0*/
     EVT_ID_SENSOR_FAILED,
@@ -59,7 +60,6 @@ int32_t applicationRun(void);
 //function used to send events to state machine
 int32_t applicationSendEvent(int32_t eventID);
 
-// Function to get the current State
-int32_t applicationGetCurrentState();
+int32_t 	AppGasSensorHandler(void);
 
 #endif

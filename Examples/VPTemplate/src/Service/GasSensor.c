@@ -59,9 +59,11 @@ int32_t gasSensorGetSensorValue(GasSensor* pSensor, uint32_t *gasvalue)
 	    }
 
     if (pSensor == NULL)
+
     {
         return SENSOR_INVALID_PTR;
     }
+
 
     //checking again, could theoretically be overidden
     if (pSensor->sensorVoltage < MIN_SENSOR_VOLTAGE || pSensor->sensorVoltage >MAX_SENSOR_VOLTAGE) return SENSOR_VOLTAGE_INVALID;
@@ -76,8 +78,6 @@ int32_t gasSensorGetSensorValue(GasSensor* pSensor, uint32_t *gasvalue)
     {
         return SENSOR_VALUE_INVALID;
     }
-
-
 
     return SENSOR_OK;
 }

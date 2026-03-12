@@ -25,7 +25,11 @@ int32_t DualChannelUpdate();
 
 int32_t DualChannelSetVoltage();
 
-int32_t DualChannelVoltageAverage(uint32_t *gasvalue);
+int32_t DualChannelVoltageAverage();
+
+int32_t ppmThresholdChecking();
+
+int32_t gasSensorHandler();
 
 
 

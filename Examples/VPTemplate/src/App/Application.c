@@ -69,7 +69,6 @@ static StateTableEntry_t gStateTableEntries[] =
 
     {STATE_ID_PRE_OPERATIONAL, STATE_ID_OPERATIONAL,     EVT_ID_SWITCH_TO_OPERATIONAL,     NULL, NULL, NULL},
     {STATE_ID_PRE_OPERATIONAL, STATE_ID_TEST_MODE,       EVT_ID_TEST_MODE_TRIGGERED,       NULL, NULL, NULL},
-    {STATE_ID_PRE_OPERATIONAL, STATE_ID_FAILURE,         EVT_ID_SENSOR_FAILED,             NULL, NULL, NULL},
     {STATE_ID_PRE_OPERATIONAL, STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL},
 
     {STATE_ID_OPERATIONAL,     STATE_ID_PRE_OPERATIONAL, EVT_ID_SWITCH_TO_PRE_OPERATIONAL, NULL, NULL, NULL},
@@ -137,7 +136,8 @@ static int32_t onEntryInitialization(State_t* pState, int32_t eventID)
     ledSetLED(LED3, LED_OFF);
     ledSetLED(LED4, LED_OFF);
     HAL_Delay(5000);
-    return applicationSendEvent(EVT_ID_INIT_READY);
+    applicationSendEvent(EVT_ID_INIT_READY);
+    return ERROR_OK;
 }
 
 static int32_t onStateInitialization(State_t* pState, int32_t eventID)
@@ -158,7 +158,7 @@ static int32_t onStatePreOperational(State_t* pState, int32_t eventID)
     ledSetLED(LED2, LED_OFF);
     ledSetLED(LED3, LED_OFF);
     ledSetLED(LED4, LED_OFF);
-
+    applicationSendEvent(EVT_ID_SWITCH_TO_OPERATIONAL);
     return ERROR_OK;
 }
 
@@ -173,6 +173,13 @@ static int32_t onStateEmergency(State_t* pState, int32_t eventID)
 {
     (void)pState;
     (void)eventID;
+
+    ledSetLED(LED0, LED_OFF);
+    ledSetLED(LED1, LED_OFF);
+    ledSetLED(LED2, LED_OFF);
+    ledSetLED(LED3, LED_OFF);
+    ledSetLED(LED4, LED_ON);
+
     return ERROR_OK;
 }
 
@@ -188,4 +195,15 @@ static int32_t onStateFailure(State_t* pState, int32_t eventID)
     (void)pState;
     (void)eventID;
     return ERROR_OK;
+}
+
+int32_t AppGasSensorHandler(void)
+{
+
+	if(gStateTable.currentStateID == STATE_ID_OPERATIONAL)
+	{
+		gasSensorHandler();
+	}
+
+	return ERROR_OK;
 }

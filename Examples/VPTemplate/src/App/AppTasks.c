@@ -65,9 +65,6 @@ static Button_Status_t gLastB1State		= BUTTON_RELEASED;
 
 void taskApp10ms()
 {
-	buttonCyclic10ms();
-	DualChannelSetVoltage();
-
 	AppGasSensorHandler();
 }
 
