@@ -52,6 +52,8 @@
 
 static int32_t emergencyTimer = 0;
 static int32_t warningTimer = 0;
+static int32_t now = 0;
+static uint32_t elapsed = 0;
 
 /******************************GlobalObjects***********************************/
 
@@ -67,6 +69,7 @@ static int32_t onStatePreOperational(State_t* pState, int32_t eventID);
 static int32_t onEntryOperational(State_t* pState, int32_t eventID);
 static int32_t onStateOperational(State_t* pState, int32_t eventID);
 static int32_t onStateEmergency(State_t* pState, int32_t eventID);
+static int32_t onExitEmergency(State_t* pState, int32_t eventID);
 static int32_t onStateTestMode(State_t* pState, int32_t eventID);
 static int32_t onStateFailure(State_t* pState, int32_t eventID);
 
@@ -75,12 +78,12 @@ static int32_t onStateFailure(State_t* pState, int32_t eventID);
 //asigning the functions to states
 static State_t gStateList[] =
 {
-    {STATE_ID_INITIALIZATION,  onEntryInitialization, 	onStateInitialization, NULL, false},
-    {STATE_ID_PRE_OPERATIONAL, onEntryPreOperational,	onStatePreOperational, NULL, false},
-    {STATE_ID_OPERATIONAL,     onEntryOperational,		onStateOperational,    NULL, false},
-    {STATE_ID_EMERGENCY,       NULL, 					onStateEmergency,      NULL, false},
-    {STATE_ID_TEST_MODE,       NULL, 					onStateTestMode,       NULL, false},
-    {STATE_ID_FAILURE,         NULL, 					onStateFailure,        NULL, false}
+    {STATE_ID_INITIALIZATION,  onEntryInitialization, 	onStateInitialization, NULL,			false},
+    {STATE_ID_PRE_OPERATIONAL, onEntryPreOperational,	onStatePreOperational, NULL,			false},
+    {STATE_ID_OPERATIONAL,     onEntryOperational,		onStateOperational,    NULL,			false},
+    {STATE_ID_EMERGENCY,       NULL, 					onStateEmergency,      onExitEmergency,	false},
+    {STATE_ID_TEST_MODE,       NULL, 					onStateTestMode,       NULL,			false},
+    {STATE_ID_FAILURE,         NULL, 					onStateFailure,        NULL,			false}
 };
 
 //State table, defining from which state can be switched to which
@@ -182,6 +185,7 @@ static int32_t onStatePreOperational(State_t* pState, int32_t eventID)
 static int32_t onEntryOperational(State_t* pState, int32_t eventID)
 {
 	ledSetLED(LED0, LED_ON);
+	ledSetLED(LED1, LED_OFF);
 
 
 	return ERROR_OK;
@@ -200,6 +204,17 @@ static int32_t onStateEmergency(State_t* pState, int32_t eventID)
     (void)eventID;
 
     return ERROR_OK;
+}
+
+static int32_t onExitEmergency(State_t* pState, int32_t eventID)
+{
+	(void)pState;
+	(void)eventID;
+
+	emergencyTimer = HAL_GetTick();
+	warningTimer = HAL_GetTick();
+
+	return ERROR_OK;
 }
 
 static int32_t onStateTestMode(State_t* pState, int32_t eventID)
@@ -224,6 +239,12 @@ int32_t AppGasSensorHandler(void)
 		gasSensorHandler();
 		ppmThresholdChecking();
 
+		if(gasSensorHandler() == DUAL_SENSOR_ERROR)
+		{
+			ledSetLED(LED4, LED_ON);
+			applicationSendEvent(EVT_ID_SENSOR_FAILED);
+		}
+
 	}
 	return ERROR_OK;
 }
@@ -240,23 +261,19 @@ int32_t emergencyBlicking(){
 
 int32_t ppmThresholdChecking(){
 
-	int32_t now = HAL_GetTick();
-
-
+	now = HAL_GetTick();
+	elapsed = 0u;
 	uint32_t avrg = 0;
+
 	getAvrg(&avrg);
 
 	if (avrg > EMERGENCY_THRESHOLD){
 
-		if (emergencyTimer ==0){
+		if (emergencyTimer == 0) emergencyTimer = now;
 
-			emergencyTimer = now;
+		elapsed = now - emergencyTimer;
 
-		}
-
-		uint32_t elapsed = now -emergencyTimer;
-
-		if (elapsed > EMERGENCY_TIME_ELAPSED ){
+		if (elapsed > EMERGENCY_TIME_ELAPSED){
 
 			applicationSendEvent(EVT_ID_EMERGENCY_TRIGGERED);
 
@@ -264,28 +281,26 @@ int32_t ppmThresholdChecking(){
 		}
 
 	}
-	else {
-		emergencyTimer = 0;
-	}
+	else emergencyTimer = 0;
+
 	if (avrg > WARNING_THRESHOLD){
 
-			if (warningTimer ==0){
+			if (warningTimer == 0) warningTimer = now;
 
-				warningTimer = now;
-
-			}
-
-			if ((now-warningTimer) > WARNING_TIME_ELAPSED )
+			if ((now - warningTimer) > WARNING_TIME_ELAPSED )
 			{
 				ledSetLED(LED1, LED_ON);
+
 				return DUAL_SENSOR_OK;
 			}
-		}
-		else {
-			warningTimer = 0;
-		}
-	return DUAL_SENSOR_OK;
+	}
+	else
+	{
+		warningTimer = 0;
+		ledSetLED(LED1, LED_OFF);
+	}
 
+	return DUAL_SENSOR_OK;
 }
 
 int32_t waterSensorHandler()

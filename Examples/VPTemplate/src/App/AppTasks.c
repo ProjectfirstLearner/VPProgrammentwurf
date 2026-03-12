@@ -108,7 +108,7 @@ static void checkButtonEvents()
 
 	if((gLastB1State == BUTTON_RELEASED) && (b1State == BUTTON_PRESSED))
 	{
-		if(currentState == STATE_ID_FAILURE)
+		if(currentState == STATE_ID_EMERGENCY)
 		{
 			applicationSendEvent(EVT_ID_ALARM_RESET);
 		}
