@@ -18,7 +18,7 @@
 #define SCALING_FACTOR			1000
 #define ALPHA					200
 #define COUNT_SENSORS			2
-#define ALLOWED_DIFFERENCE		30
+#define ALLOWED_DIFFERENCE		50
 #define PERCENTAGE_FACTOR		100
 
 
@@ -125,6 +125,9 @@ int32_t gasSensorHandler()
 	DualChannelSetVoltage();
 	DualChannelVoltageAverage();
 	DualChannelUpdate();
+
+	if((DualChannelSetVoltage() == DUAL_SENSOR_ERROR) || (DualChannelVoltageAverage() == DUAL_SENSOR_ERROR) || (DualChannelUpdate() == DUAL_SENSOR_ERROR))
+		return DUAL_SENSOR_ERROR;
 
 	return DUAL_SENSOR_OK;
 }

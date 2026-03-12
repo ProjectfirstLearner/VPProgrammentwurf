@@ -174,6 +174,7 @@ static int32_t onStatePreOperational(State_t* pState, int32_t eventID)
 static int32_t onEntryOperational(State_t* pState, int32_t eventID)
 {
 	ledSetLED(LED0, LED_ON);
+	ledSetLED(LED1, LED_OFF);
 
 	return ERROR_OK;
 }
@@ -197,8 +198,6 @@ static int32_t onExitEmergency(State_t* pState, int32_t eventID)
 {
 	(void)pState;
 	(void)eventID;
-
-	ledSetLED(LED1, LED_OFF);
 
 	emergencyTimer = HAL_GetTick();
 	warningTimer = HAL_GetTick();
@@ -227,6 +226,12 @@ int32_t AppGasSensorHandler(void)
 	{
 		gasSensorHandler();
 		ppmThresholdChecking();
+
+		if(gasSensorHandler() == DUAL_SENSOR_ERROR)
+		{
+			ledSetLED(LED4, LED_ON);
+			applicationSendEvent(EVT_ID_SENSOR_FAILED);
+		}
 
 	}
 	return ERROR_OK;
@@ -273,10 +278,15 @@ int32_t ppmThresholdChecking(){
 			if ((now - warningTimer) > WARNING_TIME_ELAPSED )
 			{
 				ledSetLED(LED1, LED_ON);
+
 				return DUAL_SENSOR_OK;
 			}
-		}
-		else warningTimer = 0;
+	}
+	else
+	{
+		warningTimer = 0;
+		ledSetLED(LED1, LED_OFF);
+	}
 
 	return DUAL_SENSOR_OK;
 }
