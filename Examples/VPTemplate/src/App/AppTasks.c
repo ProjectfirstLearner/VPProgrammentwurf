@@ -68,6 +68,7 @@ void taskApp10ms()
 	buttonCyclic10ms();
 	checkButtonEvents();
 	AppGasSensorHandler();
+	waterSensorHandler();
 }
 
 

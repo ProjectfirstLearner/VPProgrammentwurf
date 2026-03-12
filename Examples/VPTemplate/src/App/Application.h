@@ -66,4 +66,6 @@ int32_t applicationGetCurrentState();
 
 int32_t emergencyBlicking();
 
+int32_t waterSensorHandler();
+
 #endif

@@ -27,16 +27,27 @@
 
 #include "Util/StateTable/StateTable.h" //state table
 #include "DualChannelGasSensor.h"
+#include "WaterSensor.h"
+
+#include "DisplayModule.h"
 
 /***** PRIVATE CONSTANTS *****************************************************/
 
-#define CURRENT_STATE_ERROR		-1
+#define CURRENT_STATE_ERROR			-1
 
-#define WARNING_THRESHOLD		3000
-#define EMERGENCY_THRESHOLD		5000
+#define WARNING_THRESHOLD			3000
+#define EMERGENCY_THRESHOLD			5000
 
-#define WARNING_TIME_ELAPSED	5000
-#define EMERGENCY_TIME_ELAPSED	3000
+#define WARNING_TIME_ELAPSED		5000
+#define EMERGENCY_TIME_ELAPSED		3000
+
+#define WATER_VOLTAGE_PLACEHOLDER	7000
+
+#define HUNDRETS					100
+#define TENS						10
+
+#define MAX_WATER_VALUE				1000
+#define MAX_ACCEPTED_VALUE			999
 
 
 static int32_t emergencyTimer = 0;
@@ -172,6 +183,7 @@ static int32_t onEntryOperational(State_t* pState, int32_t eventID)
 {
 	ledSetLED(LED0, LED_ON);
 
+
 	return ERROR_OK;
 }
 
@@ -276,5 +288,44 @@ int32_t ppmThresholdChecking(){
 
 }
 
+int32_t waterSensorHandler()
+{
+	if(gStateTable.currentStateID == STATE_ID_OPERATIONAL){
+
+    WaterSensorSetSensorVoltage(WATER_VOLTAGE_PLACEHOLDER);
+
+    uint32_t waterLevel = 0;
+
+    int32_t waterValueCheck = WaterSensorGetSensorValue(&waterLevel);
+
+    static uint8_t displayToggle = 0;
+
+    if (waterValueCheck == SENSOR_OK)
+    {
+        /* Limit value to 999 */
+        if (waterLevel >= MAX_WATER_VALUE)
+        {
+            waterLevel = MAX_ACCEPTED_VALUE;
+        }
+
+        int32_t hundreds = waterLevel / HUNDRETS;
+        int32_t tens = (waterLevel / TENS) % TENS;
+
+        if (displayToggle == 0)
+        {
+            displayShowDigit(LEFT_DISPLAY, hundreds);
+            displayToggle = 1;
+        }
+        else
+        {
+            displayShowDigit(RIGHT_DISPLAY, tens);
+            displayToggle = 0;
+        }
+    }
+	}
+    return SENSOR_OK;
+
+
+}
 
 
