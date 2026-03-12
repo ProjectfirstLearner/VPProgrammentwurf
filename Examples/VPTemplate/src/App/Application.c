@@ -94,7 +94,6 @@ static StateTableEntry_t gStateTableEntries[] =
     {STATE_ID_EMERGENCY,       STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL},
 
     {STATE_ID_TEST_MODE,       STATE_ID_FAILURE,         EVT_ID_SENSOR_FAILED,             NULL, NULL, NULL},
-    {STATE_ID_TEST_MODE,       STATE_ID_FAILURE,         EVT_ID_STACK_CORRUPTION,          NULL, NULL, NULL}
 };
 
 
