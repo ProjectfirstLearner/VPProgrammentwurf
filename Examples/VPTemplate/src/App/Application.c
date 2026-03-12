@@ -31,6 +31,7 @@
 
 #include "DisplayModule.h"
 
+
 /***** PRIVATE CONSTANTS *****************************************************/
 
 #define CURRENT_STATE_ERROR			-1

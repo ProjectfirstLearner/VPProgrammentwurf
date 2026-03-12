@@ -26,13 +26,14 @@
 #include "Util/Log/LogOutput.h"
 
 #include "DualChannelGasSensor.h"
-
-
-/*temporary*/
+#include "StackMonitor.h"
 
 #include <stdint.h>
 #include <stddef.h>
 
+
+#define HEALTH_MONITOR_OK              0
+#define HEALTH_MONITOR_ERR_STACK      -1
 
 /*********GlobalObjects***************++/ */
 
@@ -48,6 +49,7 @@
 
 /***** PRIVATE PROTOTYPES ****************************************************/
 static void checkButtonEvents();
+static int32_t HealthCheck(void);
 
 /***** PRIVATE VARIABLES *****************************************************/
 
@@ -81,7 +83,13 @@ void taskApp50ms()
 
 void taskApp250ms()
 {
+	int32_t healthCheck = HealthCheck();
 
+	if (healthCheck != HEALTH_MONITOR_OK){
+
+		applicationSendEvent(EVT_ID_STACK_CORRUPTION);
+
+	}
 }
 
 /***** PRIVATE FUNCTIONS *****************************************************/
@@ -115,4 +123,28 @@ static void checkButtonEvents()
 	}
 
 	gLastSw1State = sw1State;
+}
+
+
+
+static int32_t HealthCheck(void)
+{
+    int32_t freeBytes = getFreeBytes();
+    int32_t usedBytes = getUsedBytes();
+    int32_t usage     = getUsage();
+
+
+
+    //outputLogf("Stack free: %ld bytes\r\n", getFreeBytes());
+    //outputLogf("Stack used: %ld bytes\r\n", getUsedBytes());
+    //outputLogf("Stack usage: %ld %%\r\n", getUsage());
+
+    /* Kritische Prüfung */
+    if (isCorrupted())
+    {
+    	outputLogf("ERROR: Stack corruption detected!\r\n");
+        return HEALTH_MONITOR_ERR_STACK;
+    }
+
+    return HEALTH_MONITOR_OK;
 }
