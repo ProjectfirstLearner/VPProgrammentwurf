@@ -19,6 +19,7 @@
 #include "AppTasks.h"
 #include "Application.h"
 #include "GasSensor.h"
+#include "ButtonModule.h"
 
 #include "ADCModule.h"
 #include "Util/Log/printf.h"
@@ -65,6 +66,7 @@
 
 void taskApp10ms()
 {
+	buttonCyclic10ms();
 	DualChannelSetVoltage();
 }
 
