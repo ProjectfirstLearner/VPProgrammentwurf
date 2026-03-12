@@ -62,4 +62,6 @@ int32_t applicationSendEvent(int32_t eventID);
 // Function to get the current State
 int32_t applicationGetCurrentState();
 
+int32_t AppGasSensorHandler(void);
+
 #endif

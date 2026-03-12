@@ -67,6 +67,8 @@ void taskApp10ms()
 {
 	buttonCyclic10ms();
 	DualChannelSetVoltage();
+
+	AppGasSensorHandler();
 }
 
 
@@ -77,8 +79,6 @@ void taskApp50ms()
 
 void taskApp250ms()
 {
-
-
 
 }
 
@@ -101,6 +101,3 @@ static void checkButtonEvents()
 			applicationSendEvent(EVT_ID_SWITCH_TO_PRE_OPERATIONAL);
 	}
 }
-
-
-
