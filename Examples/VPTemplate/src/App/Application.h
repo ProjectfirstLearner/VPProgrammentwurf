@@ -59,4 +59,7 @@ int32_t applicationRun(void);
 //function used to send events to state machine
 int32_t applicationSendEvent(int32_t eventID);
 
+// Function to get the current State
+int32_t applicationGetCurrentState();
+
 #endif
