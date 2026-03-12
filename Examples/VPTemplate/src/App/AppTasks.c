@@ -66,6 +66,7 @@ static Button_Status_t gLastSw1State	= BUTTON_RELEASED;
 void taskApp10ms()
 {
 	buttonCyclic10ms();
+	checkButtonEvents();
 	AppGasSensorHandler();
 }
 
@@ -77,8 +78,6 @@ void taskApp50ms()
 
 void taskApp250ms()
 {
-
-
 
 }
 
@@ -100,4 +99,6 @@ static void checkButtonEvents()
 		else if(currentState == STATE_ID_OPERATIONAL)
 			applicationSendEvent(EVT_ID_SWITCH_TO_PRE_OPERATIONAL);
 	}
+
+	gLastSw1State = sw1State;
 }

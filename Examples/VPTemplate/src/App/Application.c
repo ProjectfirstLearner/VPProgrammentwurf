@@ -41,7 +41,9 @@ static StateTable_t gStateTable;
 //defining functions that should be executing when in according state
 static int32_t onEntryInitialization(State_t* pState, int32_t eventID);
 static int32_t onStateInitialization(State_t* pState, int32_t eventID);
+static int32_t onEntryPreOperational(State_t* pState, int32_t eventID);
 static int32_t onStatePreOperational(State_t* pState, int32_t eventID);
+static int32_t onEntryOperational(State_t* pState, int32_t eventID);
 static int32_t onStateOperational(State_t* pState, int32_t eventID);
 static int32_t onStateEmergency(State_t* pState, int32_t eventID);
 static int32_t onStateTestMode(State_t* pState, int32_t eventID);
@@ -53,8 +55,8 @@ static int32_t onStateFailure(State_t* pState, int32_t eventID);
 static State_t gStateList[] =
 {
     {STATE_ID_INITIALIZATION,  onEntryInitialization, 	onStateInitialization, NULL, false},
-    {STATE_ID_PRE_OPERATIONAL, NULL, 					onStatePreOperational, NULL, false},
-    {STATE_ID_OPERATIONAL,     NULL, 					onStateOperational,    NULL, false},
+    {STATE_ID_PRE_OPERATIONAL, onEntryPreOperational,	onStatePreOperational, NULL, false},
+    {STATE_ID_OPERATIONAL,     onEntryOperational,		onStateOperational,    NULL, false},
     {STATE_ID_EMERGENCY,       NULL, 					onStateEmergency,      NULL, false},
     {STATE_ID_TEST_MODE,       NULL, 					onStateTestMode,       NULL, false},
     {STATE_ID_FAILURE,         NULL, 					onStateFailure,        NULL, false}
@@ -130,12 +132,6 @@ static int32_t onEntryInitialization(State_t* pState, int32_t eventID)
     (void)pState;
     (void)eventID;
 
-    ledSetLED(LED0, LED_ON);
-    ledSetLED(LED1, LED_OFF);
-    ledSetLED(LED2, LED_OFF);
-    ledSetLED(LED3, LED_OFF);
-    ledSetLED(LED4, LED_OFF);
-    HAL_Delay(5000);
     applicationSendEvent(EVT_ID_INIT_READY);
     return ERROR_OK;
 }
@@ -148,18 +144,26 @@ static int32_t onStateInitialization(State_t* pState, int32_t eventID)
     return ERROR_OK;
 }
 
+static int32_t onEntryPreOperational(State_t* pState, int32_t eventID)
+{
+	ledSetLED(LED0, LED_OFF);
+
+	return ERROR_OK;
+}
+
 static int32_t onStatePreOperational(State_t* pState, int32_t eventID)
 {
     (void)pState;
     (void)eventID;
 
-    ledSetLED(LED0, LED_OFF);
-    ledSetLED(LED1, LED_ON);
-    ledSetLED(LED2, LED_OFF);
-    ledSetLED(LED3, LED_OFF);
-    ledSetLED(LED4, LED_OFF);
-    applicationSendEvent(EVT_ID_SWITCH_TO_OPERATIONAL);
     return ERROR_OK;
+}
+
+static int32_t onEntryOperational(State_t* pState, int32_t eventID)
+{
+	ledSetLED(LED0, LED_ON);
+
+	return ERROR_OK;
 }
 
 static int32_t onStateOperational(State_t* pState, int32_t eventID)

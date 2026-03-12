@@ -33,9 +33,9 @@
  */
 typedef enum _Button_t
 {
-    BTN_B1,
-    BTN_SW1,                        //!< Button (SW1)
-    BTN_SW2,                        //!< Button (SW2)
+    BTN_SW1,
+    BTN_SW2,
+    BTN_B1
 } Button_t;
 
 /**
