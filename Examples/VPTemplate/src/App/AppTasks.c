@@ -65,7 +65,8 @@
 
 void taskApp10ms()
 {
-	DualChannelSetVoltage();
+	AppGasSensorHandler();
+
 }
 
 
