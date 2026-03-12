@@ -187,12 +187,6 @@ static int32_t onStateEmergency(State_t* pState, int32_t eventID)
     (void)pState;
     (void)eventID;
 
-    ledSetLED(LED0, LED_OFF);
-    ledSetLED(LED1, LED_OFF);
-    ledSetLED(LED2, LED_OFF);
-    ledSetLED(LED3, LED_OFF);
-    ledSetLED(LED4, LED_ON);
-
     return ERROR_OK;
 }
 
@@ -217,6 +211,15 @@ int32_t AppGasSensorHandler(void)
 	{
 		gasSensorHandler();
 		ppmThresholdChecking();
+
+	}
+	return ERROR_OK;
+}
+
+int32_t emergencyBlicking(){
+
+	if (gStateTable.currentStateID == STATE_ID_EMERGENCY){
+		ledToggleLED(LED1);
 	}
 
 	return ERROR_OK;
@@ -248,8 +251,6 @@ int32_t ppmThresholdChecking(){
 			return DUAL_SENSOR_OK;
 		}
 
-
-
 	}
 	else {
 		emergencyTimer = 0;
@@ -264,7 +265,7 @@ int32_t ppmThresholdChecking(){
 
 			if ((now-warningTimer) > WARNING_TIME_ELAPSED )
 			{
-				ledSetLED(LED4, LED_ON);
+				ledSetLED(LED1, LED_ON);
 				return DUAL_SENSOR_OK;
 			}
 		}
