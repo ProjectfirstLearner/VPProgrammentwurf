@@ -39,7 +39,7 @@
 
 
 /***** PRIVATE CONSTANTS *****************************************************/
-
+#define OPERATIONAL_STATE 2
 
 /***** PRIVATE MACROS ********************************************************/
 
@@ -68,6 +68,7 @@ static Button_Status_t gLastB1State		= BUTTON_RELEASED;
 void taskApp10ms()
 {
 	buttonCyclic10ms();
+	toggleDashSymbol();
 	checkButtonEvents();
 	AppGasSensorHandler();
 	waterSensorHandler();
@@ -77,7 +78,7 @@ void taskApp10ms()
 void taskApp50ms()
 {
 	applicationRun();
-	outputLogf(" current state: %d ", applicationGetCurrentState());
+	//outputLogf(" current state: %d ", applicationGetCurrentState());
 	emergencyBlicking();
 }
 
