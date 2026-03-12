@@ -66,7 +66,6 @@ static StateTable_t gStateTable;
 /***** PRIVATE PROTOTYPES ****************************************************/
 
 //defining functions that should be executing when in according state
-static int32_t onEntryInitialization(State_t* pState, int32_t eventID);
 static int32_t onStateInitialization(State_t* pState, int32_t eventID);
 static int32_t onEntryPreOperational(State_t* pState, int32_t eventID);
 static int32_t onStatePreOperational(State_t* pState, int32_t eventID);
@@ -75,6 +74,7 @@ static int32_t onStateOperational(State_t* pState, int32_t eventID);
 static int32_t onStateEmergency(State_t* pState, int32_t eventID);
 static int32_t onExitEmergency(State_t* pState, int32_t eventID);
 static int32_t onStateTestMode(State_t* pState, int32_t eventID);
+static int32_t onEntryFailure(State_t* pState, int32_t eventID);
 static int32_t onStateFailure(State_t* pState, int32_t eventID);
 
 /***** PRIVATE VARIABLES *****************************************************/
@@ -82,12 +82,12 @@ static int32_t onStateFailure(State_t* pState, int32_t eventID);
 //asigning the functions to states
 static State_t gStateList[] =
 {
-    {STATE_ID_INITIALIZATION,  onEntryInitialization, 	onStateInitialization, NULL,			false},
+    {STATE_ID_INITIALIZATION,  NULL,				 	onStateInitialization, NULL,			false},
     {STATE_ID_PRE_OPERATIONAL, onEntryPreOperational,	onStatePreOperational, NULL,			false},
     {STATE_ID_OPERATIONAL,     onEntryOperational,		onStateOperational,    NULL,			false},
     {STATE_ID_EMERGENCY,       NULL, 					onStateEmergency,      onExitEmergency,	false},
     {STATE_ID_TEST_MODE,       NULL, 					onStateTestMode,       NULL,			false},
-    {STATE_ID_FAILURE,         NULL, 					onStateFailure,        NULL,			false}
+    {STATE_ID_FAILURE,         onEntryFailure,			onStateFailure,        NULL,			false}
 };
 
 //State table, defining from which state can be switched to which
@@ -154,20 +154,12 @@ int32_t applicationGetCurrentState()
 
 /***** PRIVATE FUNCTIONS *****************************************************/
 
-static int32_t onEntryInitialization(State_t* pState, int32_t eventID)
-{
-    (void)pState;
-    (void)eventID;
-
-    applicationSendEvent(EVT_ID_INIT_READY);
-    return ERROR_OK;
-}
-
 static int32_t onStateInitialization(State_t* pState, int32_t eventID)
 {
     (void)pState;
     (void)eventID;
 
+    applicationSendEvent(EVT_ID_INIT_READY);
     return ERROR_OK;
 }
 
@@ -231,6 +223,13 @@ static int32_t onStateTestMode(State_t* pState, int32_t eventID)
     (void)pState;
     (void)eventID;
     return ERROR_OK;
+}
+
+static int32_t onEntryFailure(State_t* pState, int32_t eventID)
+{
+	ledSetLED(LED2, LED_ON);
+
+	return ERROR_OK;
 }
 
 static int32_t onStateFailure(State_t* pState, int32_t eventID)
