@@ -64,4 +64,6 @@ int32_t AppGasSensorHandler(void);
 
 int32_t applicationGetCurrentState();
 
+int32_t emergencyBlicking();
+
 #endif

@@ -74,6 +74,8 @@ void taskApp10ms()
 void taskApp50ms()
 {
 	applicationRun();
+	outputLogf(" current state: %d ", applicationGetCurrentState());
+	emergencyBlicking();
 }
 
 void taskApp250ms()
