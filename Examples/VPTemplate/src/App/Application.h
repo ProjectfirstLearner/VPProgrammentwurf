@@ -60,6 +60,8 @@ int32_t applicationRun(void);
 //function used to send events to state machine
 int32_t applicationSendEvent(int32_t eventID);
 
-int32_t 	AppGasSensorHandler(void);
+int32_t AppGasSensorHandler(void);
+
+int32_t applicationGetCurrentState();
 
 #endif
