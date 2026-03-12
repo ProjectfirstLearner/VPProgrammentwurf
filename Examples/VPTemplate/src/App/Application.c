@@ -28,6 +28,10 @@
 #include "Util/StateTable/StateTable.h" //state table
 #include "DualChannelGasSensor.h"
 
+/***** PRIVATE CONSTANTS *****************************************************/
+
+#define CURRENT_STATE_ERROR		-1
+
 /******************************GlobalObjects***********************************/
 
 static StateTable_t gStateTable;
@@ -89,11 +93,7 @@ static StateTableEntry_t gStateTableEntries[] =
 
 int32_t applicationInitialize(void)
 {
-
-
-
 	DualChannelInit();
-
 
     gStateTable.pStateList = gStateList;														//adding states to global instance
     gStateTable.stateCount = sizeof(gStateList) / sizeof(gStateList[0]);						//
@@ -114,6 +114,13 @@ int32_t applicationRun(void)
 int32_t applicationSendEvent(int32_t eventID)
 {
     return stateTableSendEvent(&gStateTable, eventID);		//function to sending event
+}
+
+int32_t applicationGetCurrentState()
+{
+	if(gStateTable.pCurrentStateRef == NULL) return CURRENT_STATE_ERROR;
+
+	return gStateTable.pCurrentStateRef->stateID;
 }
 
 /***** PRIVATE FUNCTIONS *****************************************************/

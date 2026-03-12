@@ -19,6 +19,7 @@
 #include "AppTasks.h"
 #include "Application.h"
 #include "GasSensor.h"
+#include "ButtonModule.h"
 
 #include "ADCModule.h"
 #include "Util/Log/printf.h"
@@ -36,8 +37,6 @@
 /*********GlobalObjects***************++/ */
 
 
-
-
 /***** PRIVATE CONSTANTS *****************************************************/
 
 
@@ -48,9 +47,13 @@
 
 
 /***** PRIVATE PROTOTYPES ****************************************************/
-
+static void checkButtonEvents();
 
 /***** PRIVATE VARIABLES *****************************************************/
+
+static Button_Status_t gLastSw1State	= BUTTON_RELEASED;
+static Button_Status_t gLastSw2State	= BUTTON_RELEASED;
+static Button_Status_t gLastB1State		= BUTTON_RELEASED;
 
 /***PRIVATE FUNCTIONS***/
 
@@ -60,13 +63,9 @@
 
 /***** PUBLIC FUNCTIONS ******************************************************/
 
-
-
-
 void taskApp10ms()
 {
 	AppGasSensorHandler();
-
 }
 
 
@@ -82,9 +81,25 @@ void taskApp250ms()
 
 }
 
-
 /***** PRIVATE FUNCTIONS *****************************************************/
+static void checkButtonEvents()
+{
+	Button_Status_t sw1State = buttonGetButtonStatus(BTN_SW1);
+	Button_Status_t sw2State = buttonGetButtonStatus(BTN_SW2);
+	Button_Status_t b1State  = buttonGetButtonStatus(BTN_B1);
 
+	/* SW1: Pre-Operational <-> Operational */
+	if((gLastSw1State == BUTTON_RELEASED) && (sw1State == BUTTON_PRESSED))
+	{
+		int32_t currentState = applicationGetCurrentState();
+
+		if(currentState == STATE_ID_PRE_OPERATIONAL)
+			applicationSendEvent(EVT_ID_SWITCH_TO_OPERATIONAL);
+
+		else if(currentState == STATE_ID_OPERATIONAL)
+			applicationSendEvent(EVT_ID_SWITCH_TO_PRE_OPERATIONAL);
+	}
+}
 
 
 
