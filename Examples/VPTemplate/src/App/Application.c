@@ -32,6 +32,16 @@
 
 #define CURRENT_STATE_ERROR		-1
 
+#define WARNING_THRESHOLD		3000
+#define EMERGENCY_THRESHOLD		5000
+
+#define WARNING_TIME_ELAPSED	5000
+#define EMERGENCY_TIME_ELAPSED	3000
+
+
+static int32_t emergencyTimer = 0;
+static int32_t warningTimer = 0;
+
 /******************************GlobalObjects***********************************/
 
 static StateTable_t gStateTable;
@@ -207,7 +217,64 @@ int32_t AppGasSensorHandler(void)
 	if(gStateTable.currentStateID == STATE_ID_OPERATIONAL)
 	{
 		gasSensorHandler();
+		ppmThresholdChecking();
 	}
 
 	return ERROR_OK;
 }
+
+
+int32_t ppmThresholdChecking(){
+
+	int32_t now = HAL_GetTick();
+
+
+	uint32_t avrg = 0;
+	getAvrg(&avrg);
+
+	if (avrg > EMERGENCY_THRESHOLD){
+
+		if (emergencyTimer ==0){
+
+			emergencyTimer = now;
+
+		}
+
+		uint32_t elapsed = now -emergencyTimer;
+
+		if (elapsed > EMERGENCY_TIME_ELAPSED ){
+
+			applicationSendEvent(EVT_ID_EMERGENCY_TRIGGERED);
+
+			return DUAL_SENSOR_OK;
+		}
+
+
+
+	}
+	else {
+		emergencyTimer = 0;
+	}
+	if (avrg > WARNING_THRESHOLD){
+
+			if (warningTimer ==0){
+
+				warningTimer = now;
+
+			}
+
+			if ((now-warningTimer) > WARNING_TIME_ELAPSED )
+			{
+				ledSetLED(LED4, LED_ON);
+				return DUAL_SENSOR_OK;
+			}
+		}
+		else {
+			warningTimer = 0;
+		}
+	return DUAL_SENSOR_OK;
+
+}
+
+
+
