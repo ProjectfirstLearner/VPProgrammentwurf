@@ -31,6 +31,8 @@ int32_t ppmThresholdChecking();
 
 int32_t gasSensorHandler();
 
+int32_t getAvrg(uint32_t *avrgValue);
+
 
 
 
